@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #f1f5f9;
+        --surface: #ffffff;
+        --surface-2: #f8fafc;
+        --border: #e2e8f0;
+        --border-strong: #cbd5e1;
+        --text: #0f172a;
+        --text-soft: #475569;
+        --muted: #64748b;
+        --subtle: #94a3b8;
+        --brand: #2563eb;
+        --brand-dark: #1d4ed8;
+        --brand-soft: #eff6ff;
+        --brand-border: #bfdbfe;
+        --ok: #059669;
+        --ok-soft: #ecfdf5;
+        --ok-border: #a7f3d0;
+        --danger: #dc2626;
+        --danger-soft: #fef2f2;
+        --danger-border: #fecaca;
+        --radius: 12px;
+        --radius-sm: 8px;
+        --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+
+      body {
+        margin: 0;
+        padding: 18px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 18px 40px -28px rgba(15, 23, 42, .5);
+        padding: 24px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+      /* ---------- Views ---------- */
+      .view { display: none; }
+      .view.is-active { display: flex; }
+
+      #loadingView, #errorView {
+        flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; flex: 1 1 auto;
+        animation: fadeIn .35s ease-out;
+      }
+      #summaryView {
+        flex-direction: column; height: 100%; min-height: 0;
+        animation: slideUp .45s cubic-bezier(.16, 1, .3, 1);
+      }
+
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes pulse { 0%, 100% { transform: scale(1); opacity: .18; } 50% { transform: scale(1.06); opacity: .5; } }
+      @keyframes slide { 0% { left: -40%; } 100% { left: 100%; } }
+
+      /* ---------- Loading ---------- */
+      .spinner-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 22px; }
+      .spinner {
+        width: 72px; height: 72px; border-radius: 50%;
+        border: 6px solid var(--border);
+        border-top-color: var(--brand);
+        animation: spin 1s linear infinite;
+      }
+      .spinner-glow {
+        position: absolute; inset: 0; border-radius: 50%;
+        box-shadow: 0 0 22px rgba(37, 99, 235, .45);
+        animation: pulse 2s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      h2 { margin: 0 0 6px; font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+      p.subtitle { margin: 0 0 18px; font-size: 13px; color: var(--muted); max-width: 460px; }
+
+      .progress-track {
+        position: relative; width: 240px; height: 4px;
+        background: var(--border); border-radius: 999px; overflow: hidden;
+        margin-bottom: 18px;
+      }
+      .progress-track i {
+        position: absolute; top: 0; width: 40%; height: 100%;
+        background: linear-gradient(90deg, transparent, var(--brand), transparent);
+        animation: slide 1.4s ease-in-out infinite;
+      }
+
+      .context-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+      .chip {
+        background: var(--surface-2); border: 1px solid var(--border);
+        border-radius: 999px; padding: 4px 11px;
+        font-size: 11.5px; font-weight: 600; color: var(--text-soft);
+      }
+      .chip b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+      /* ---------- Summary ---------- */
+      .summary-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+      .summary-head h2 { margin-bottom: 2px; }
+
+      .totals { display: flex; gap: 7px; flex: 0 0 auto; }
+      .total-pill {
+        border-radius: 10px; padding: 6px 12px; text-align: right;
+        border: 1px solid var(--border); background: var(--surface-2);
+      }
+      .total-pill span { display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--subtle); }
+      .total-pill b { display: block; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      .total-pill.is-updated { border-color: var(--ok-border); background: var(--ok-soft); }
+      .total-pill.is-updated b { color: var(--ok); }
+      .total-pill.is-inserted { border-color: var(--brand-border); background: var(--brand-soft); }
+      .total-pill.is-inserted b { color: var(--brand-dark); }
+
+      .period-strip {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 11.5px; font-weight: 600; color: var(--muted);
+        margin-bottom: 12px;
+      }
+      .period-strip b { color: var(--text); font-variant-numeric: tabular-nums; }
+      .period-strip .arrow { color: var(--subtle); }
+
+      .report {
+        flex: 1 1 auto; min-height: 0; overflow-y: auto;
+        border: 1px solid var(--border); border-radius: var(--radius);
+        background: var(--surface-2);
+        padding: 12px; margin-bottom: 16px;
+      }
+
+      .sheet-card {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
+        padding: 11px 13px; margin-bottom: 10px;
+      }
+      .sheet-card:last-child { margin-bottom: 0; }
+
+      .sheet-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border);
+      }
+      .sheet-name { font-size: 13px; font-weight: 700; letter-spacing: -0.01em; }
+      .sheet-stats { display: flex; align-items: center; gap: 6px; }
+      .tag {
+        font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+        font-variant-numeric: tabular-nums;
+      }
+      .tag.is-updated { background: var(--ok-soft); color: #047857; border: 1px solid var(--ok-border); }
+      .tag.is-inserted { background: var(--brand-soft); color: var(--brand-dark); border: 1px solid var(--brand-border); }
+      .tag.is-sum { background: var(--surface-2); color: var(--text-soft); border: 1px solid var(--border); }
+
+      .row-item {
+        display: flex; align-items: center; gap: 9px;
+        padding: 4px 0; font-size: 12px;
+      }
+      .row-item + .row-item { border-top: 1px dashed var(--border); }
+      .row-mark {
+        flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%;
+      }
+      .row-mark.is-updated { background: var(--ok); }
+      .row-mark.is-inserted { background: var(--brand); }
+      .row-body { flex: 1 1 auto; min-width: 0; }
+      .row-name { font-weight: 600; color: var(--text); }
+      .row-meta { font-size: 11px; color: var(--subtle); }
+      .row-amount { flex: 0 0 auto; text-align: right; }
+      .row-amount b { font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      .row-amount.is-updated b { color: var(--ok); }
+      .row-amount.is-inserted b { color: var(--brand-dark); }
+      .row-amount i { display: block; font-size: 10.5px; font-style: normal; color: var(--subtle); font-variant-numeric: tabular-nums; }
+
+      .none-text { font-size: 12px; color: var(--subtle); font-style: italic; }
+
+      /* ---------- Buttons ---------- */
+      .btn {
+        border: 0; cursor: pointer; width: 100%;
+        font-family: inherit; font-size: 14px; font-weight: 700;
+        padding: 12px 20px; border-radius: 10px;
+        transition: background .15s ease, transform .15s ease;
+      }
+      .btn-secondary { background: #475569; color: #fff; }
+      .btn-secondary:hover { background: #334155; }
+      .btn-secondary:active { transform: translateY(1px); }
+
+      .error-icon { font-size: 42px; margin-bottom: 12px; }
+
+      ::-webkit-scrollbar { width: 9px; }
+      ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; border: 2px solid var(--surface-2); }
+      ::-webkit-scrollbar-thumb:hover { background: var(--subtle); }
+      ::-webkit-scrollbar-track { background: transparent; }
+    </style>
+  </head>
+
+  <body>
+    <div class="card">
+
+      <!-- 1. LOADING -->
+      <div id="loadingView" class="view is-active">
+        <div class="spinner-wrap">
+          <div class="spinner"></div>
+          <div class="spinner-glow"></div>
+        </div>
+        <h2>Executing rollover</h2>
+        <p class="subtitle">Merging income, savings, expenses, ibadah and autodeduct ledgers. This window updates itself when the sheet is done.</p>
+        <div class="progress-track"><i></i></div>
+        <div class="context-chips" id="contextChips"></div>
+      </div>
+
+      <!-- 2. SUMMARY -->
+      <div id="summaryView" class="view">
+        <div class="summary-head">
+          <div>
+            <h2>Rollover complete</h2>
+            <p class="subtitle" style="margin-bottom:0;">Every ledger below was merged and audited.</p>
+          </div>
+          <div class="totals">
+            <div class="total-pill is-updated"><span>Updated</span><b id="totalUpdated">0</b></div>
+            <div class="total-pill is-inserted"><span>Inserted</span><b id="totalInserted">0</b></div>
+          </div>
+        </div>
+
+        <div class="period-strip">
+          <span>Source (M-1)</span><b id="metaSource">—</b>
+          <span class="arrow">&rarr;</span>
+          <span>Target</span><b id="metaTarget">—</b>
+        </div>
+
+        <div id="report" class="report"></div>
+
+        <button type="button" class="btn btn-secondary" id="closeSummary">Close</button>
+      </div>
+
+      <!-- 3. ERROR -->
+      <div id="errorView" class="view">
+        <div class="error-icon">&#9888;&#65039;</div>
+        <h2>Rollover failed</h2>
+        <p class="subtitle" id="errorMessage" style="color: var(--danger);"></p>
+        <button type="button" class="btn btn-secondary" id="closeError" style="max-width:220px;">Close</button>
+      </div>
+
+    </div>
+
+    <script>
+      // Configuration submitted by MonthlyDataDialog, injected as an escaped literal.
+      var RAW_FORM_DATA = <?!= formDataLiteral ?>;
+
+      (function () {
+        'use strict';
+
+        var SHEET_ORDER = ['Income', 'Saving', 'Expense', 'Ibadah', 'Autodeduct Jajan'];
+        var IDR_FORMAT = new Intl.NumberFormat('id-ID');
+        var ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+        function byId(id) { return document.getElementById(id); }
+
+        function escapeHtml(value) {
+          return String(value === null || value === undefined ? '' : value)
+              .replace(/[&<>"']/g, function (ch) { return ESCAPES[ch]; });
+        }
+
+        function idr(value) {
+          return 'IDR ' + IDR_FORMAT.format(Math.round(Number(value) || 0));
+        }
+
+        function showView(id) {
+          ['loadingView', 'summaryView', 'errorView'].forEach(function (viewId) {
+            byId(viewId).classList.toggle('is-active', viewId === id);
+          });
+        }
+
+        function showError(message) {
+          byId('errorMessage').textContent = message;
+          showView('errorView');
+        }
+
+        function countOf(list) { return (list && list.length) ? list.length : 0; }
+
+        /** Shows what is being generated, straight from the submitted configuration. */
+        function renderContextChips(formData) {
+          var rollover = countOf(formData.selectedSaving) +
+              countOf(formData.selectedExpense) +
+              countOf(formData.selectedIbadah);
+
+          var chips = [
+            'Target <b>' + escapeHtml(pad2(formData.targetYear) + '-' +
+                pad2(Number(formData.targetMonth) + 1)) + '</b>',
+            'Rollover rows <b>' + rollover + '</b>',
+            'Autodeduct rows <b>' + countOf(formData.selectedAutodeduct) + '</b>'
+          ];
+
+          byId('contextChips').innerHTML = chips.map(function (text) {
+            return '<div class="chip">' + text + '</div>';
+          }).join('');
+        }
+
+        function pad2(value) {
+          var text = String(value);
+          return text.length < 2 ? '0' + text : text;
+        }
+
+        function rowHtml(item) {
+          var status = item.status === 'updated' ? 'updated' : 'inserted';
+          var meta = [item.type, item.channel].filter(Boolean).join(' · ') + (item.info || '');
+          var previous = status === 'updated'
+              ? '<i>was ' + escapeHtml(item.prevAmountFormatted) + '</i>'
+              : '';
+
+          return '<div class="row-item">' +
+              '<span class="row-mark is-' + status + '"></span>' +
+              '<span class="row-body">' +
+                '<span class="row-name">' + escapeHtml(item.list) + '</span>' +
+                (meta ? '<span class="row-meta"> — ' + escapeHtml(meta) + '</span>' : '') +
+              '</span>' +
+              '<span class="row-amount is-' + status + '">' +
+                '<b>' + escapeHtml(item.amountFormatted) + '</b>' + previous +
+              '</span>' +
+              '</div>';
+        }
+
+        function sheetCardHtml(name, data) {
+          if (!data) {
+            return '<div class="sheet-card">' +
+                '<div class="sheet-head"><span class="sheet-name">' + escapeHtml(name) + '</span></div>' +
+                '<div class="none-text">Sheet not found — nothing processed.</div></div>';
+          }
+
+          var rows = data.appended || [];
+          var total = 0;
+          for (var i = 0; i < rows.length; i++) total += Number(rows[i].amount) || 0;
+
+          var body = rows.length
+              ? rows.map(rowHtml).join('')
+              : '<div class="none-text">No rows processed.</div>';
+
+          return '<div class="sheet-card">' +
+              '<div class="sheet-head">' +
+                '<span class="sheet-name">' + escapeHtml(name) + '</span>' +
+                '<span class="sheet-stats">' +
+                  '<span class="tag is-updated">' + data.updated + ' updated</span>' +
+                  '<span class="tag is-inserted">' + data.inserted + ' inserted</span>' +
+                  (rows.length ? '<span class="tag is-sum">' + escapeHtml(idr(total)) + '</span>' : '') +
+                '</span>' +
+              '</div>' + body + '</div>';
+        }
+
+        function renderSummary(report) {
+          var meta = report.meta || {};
+          byId('metaSource').textContent = meta.srcStr || '—';
+          byId('metaTarget').textContent = meta.tgtStr || '—';
+          byId('totalUpdated').textContent = meta.totalUpdated || 0;
+          byId('totalInserted').textContent = meta.totalInserted || 0;
+
+          byId('report').innerHTML = SHEET_ORDER.map(function (name) {
+            return sheetCardHtml(name, (report.sheets || {})[name]);
+          }).join('');
+
+          showView('summaryView');
+        }
+
+        function run() {
+          byId('closeSummary').addEventListener('click', function () { google.script.host.close(); });
+          byId('closeError').addEventListener('click', function () { google.script.host.close(); });
+
+          var formData;
+          try {
+            if (!RAW_FORM_DATA) throw new Error('Form configuration data is empty or invalid.');
+            formData = JSON.parse(RAW_FORM_DATA);
+          } catch (e) {
+            showError(e.message || 'An unexpected error occurred during initialization.');
+            return;
+          }
+
+          renderContextChips(formData);
+
+          google.script.run
+              .withSuccessHandler(renderSummary)
+              .withFailureHandler(function (error) {
+                showError((error && error.message) ? error.message : 'Server error occurred during execution.');
+              })
+              .executeMonthlyGeneration(formData);
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', run);
+        } else {
+          run();
+        }
+      })();
+    </script>
+  </body>
+</html>

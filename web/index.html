@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; frame-src https://accounts.google.com/gsi/; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/; img-src 'self' data: https://*.googleusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Finance">
+  <title>Financial Tracker</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Financial Tracker</h1>
+    <div class="topbar-actions">
+      <button id="install-btn" type="button" class="pill-btn" hidden>Install app</button>
+      <button id="settings-btn" type="button" class="icon-btn" aria-label="Settings" hidden>⚙</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="view-setup" class="view" hidden>
+      <h2>Connect to your sheet</h2>
+      <p class="muted">Enter the backend URL and token once. They are stored only on this phone.</p>
+      <form id="setup-form" class="card stack">
+        <label class="field"><span>Backend URL</span>
+          <input id="setup-url" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" required placeholder="https://script.google.com/macros/s/…/exec">
+        </label>
+        <label class="field"><span>Token</span>
+          <input id="setup-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+        </label>
+        <button type="submit" class="btn primary">Save and continue</button>
+      </form>
+      <p id="setup-status" class="status" role="status"></p>
+    </section>
+
+    <section id="view-signin" class="view" hidden>
+      <h2>Sign in</h2>
+      <p class="muted">Sign in with the Google account that can open the household sheet. Financial data loads only after sign-in and is never saved on this phone.</p>
+      <div id="gsi-button" class="gsi-slot"></div>
+      <p id="signin-status" class="status" role="status"></p>
+    </section>
+
+    <section id="view-cc" class="view" hidden>
+      <h2>CC Tracker</h2>
+      <div class="segmented" role="group" aria-label="Filter rows">
+        <button type="button" class="seg" data-filter="unpaid" aria-pressed="true">Unpaid</button>
+        <button type="button" class="seg" data-filter="paid" aria-pressed="false">Paid</button>
+        <button type="button" class="seg" data-filter="cancelled" aria-pressed="false">Cancelled</button>
+        <button type="button" class="seg" data-filter="all" aria-pressed="false">All</button>
+      </div>
+      <div class="row between">
+        <p id="cc-summary" class="summary"></p>
+        <button id="cc-refresh" type="button" class="btn">Refresh</button>
+      </div>
+      <p id="cc-status" class="status" role="status"></p>
+      <ul id="cc-list" class="list"></ul>
+
+      <div id="cc-bar" class="action-bar" hidden>
+        <span id="cc-selected" class="grow">0 selected</span>
+        <button id="cc-mark-paid" type="button" class="btn primary">Mark paid</button>
+        <button id="cc-mark-cancelled" type="button" class="btn">Mark cancelled</button>
+        <button id="cc-clear" type="button" class="btn">Clear</button>
+      </div>
+
+      <details class="panel">
+        <summary>Sync transactions</summary>
+        <div class="panel-body">
+          <div class="row">
+            <button id="sync-yesterday" type="button" class="btn">Yesterday</button>
+            <button id="sync-today" type="button" class="btn">Today</button>
+          </div>
+          <div class="grid2">
+            <label class="field"><span>From</span><input id="sync-start" type="date"></label>
+            <label class="field"><span>To</span><input id="sync-end" type="date"></label>
+          </div>
+          <button id="sync-range" type="button" class="btn primary">Sync date range</button>
+          <pre id="sync-result" class="result" hidden></pre>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary>Clean up settled rows</summary>
+        <div class="panel-body">
+          <div class="row">
+            <button id="settled-load" type="button" class="btn">Load settled rows</button>
+            <button id="settled-delete" type="button" class="btn danger">Delete 0 rows</button>
+          </div>
+          <ul id="settled-list" class="list"></ul>
+          <p id="settled-status" class="status" role="status"></p>
+        </div>
+      </details>
+    </section>
+
+    <section id="view-fin" class="view" hidden>
+      <h2>Financial</h2>
+      <div class="month-bar">
+        <button id="month-prev" type="button" class="icon-btn" aria-label="Previous month">‹</button>
+        <input id="month-input" type="month" aria-label="Month">
+        <button id="month-next" type="button" class="icon-btn" aria-label="Next month">›</button>
+      </div>
+      <p class="muted small">Editing entries and paid status comes in the next update.</p>
+      <p id="fin-status" class="status" role="status"></p>
+
+      <div id="fin-stats" class="stats"></div>
+
+      <section class="card">
+        <h3>Unpaid by channel</h3>
+        <div id="unpaid"></div>
+      </section>
+
+      <section class="card">
+        <h3>Jajan per person</h3>
+        <div id="jajan"></div>
+      </section>
+
+      <details id="dash" class="panel">
+        <summary>Sheet Dashboard</summary>
+        <div id="dash-body" class="panel-body"></div>
+      </details>
+
+      <section class="card">
+        <h3>Tools</h3>
+        <button id="sort-btn" type="button" class="btn">Sort ledger sheets</button>
+      </section>
+    </section>
+
+    <section id="view-settings" class="view" hidden>
+      <button type="button" class="link" data-back>← Back</button>
+      <h2>Settings</h2>
+      <div class="card stack">
+        <p class="account">Signed in as <strong id="account-email"></strong></p>
+        <button id="sign-out" type="button" class="btn danger">Sign out</button>
+      </div>
+      <form id="settings-form" class="card stack">
+        <label class="field"><span>Backend URL</span>
+          <input id="settings-url" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </label>
+        <label class="field"><span>Token</span>
+          <input id="settings-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </label>
+        <button type="submit" class="btn primary">Save and reload</button>
+      </form>
+      <p id="settings-status" class="status" role="status"></p>
+      <p id="ios-hint" class="muted small" hidden>Optional: for an app icon, tap Share, then “Add to Home Screen”.</p>
+    </section>
+  </main>
+
+  <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
+
+  <nav id="tabbar" class="tabbar" aria-label="Sections" hidden>
+    <button type="button" class="tab" data-tab="cc"><span aria-hidden="true">💳</span><span>CC Tracker</span></button>
+    <button type="button" class="tab" data-tab="fin"><span aria-hidden="true">📊</span><span>Financial</span></button>
+  </nav>
+</body>
+</html>

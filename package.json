@@ -1,0 +1,10 @@
+{
+  "name": "financial-tracker-system",
+  "private": true,
+  "description": "Google Apps Script project for the Financial Tracker System. Requires the global clasp CLI: npm install -g @google/clasp",
+  "scripts": {
+    "push": "node scripts/push.js",
+    "push-code": "clasp push -f",
+    "pull": "clasp pull"
+  }
+}

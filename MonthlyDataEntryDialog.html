@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #f1f5f9;
+        --surface: #ffffff;
+        --surface-2: #f8fafc;
+        --border: #e2e8f0;
+        --border-strong: #cbd5e1;
+        --text: #0f172a;
+        --text-soft: #475569;
+        --muted: #64748b;
+        --subtle: #94a3b8;
+        --brand: #2563eb;
+        --brand-dark: #1d4ed8;
+        --brand-soft: #eff6ff;
+        --brand-border: #bfdbfe;
+        --ok: #059669;
+        --ok-soft: #ecfdf5;
+        --danger: #dc2626;
+        --danger-soft: #fef2f2;
+        --danger-border: #fecaca;
+        --radius: 12px;
+        --radius-sm: 8px;
+        --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { height: 100%; }
+
+      body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .app { display: flex; flex-direction: column; height: 100%; }
+
+      .sr-only {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+      }
+
+      .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+      /* ---------- Top bar ---------- */
+      .topbar {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        padding: 12px 18px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        z-index: 2;
+      }
+      .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+      .topbar-sub { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+      .topbar-period { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+      .topbar-period input[type="month"] { width: 140px; font-weight: 600; }
+
+      /* ---------- Scroll area ---------- */
+      .content { flex: 1 1 auto; overflow-y: auto; padding: 14px 18px 18px; }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        padding: 14px 16px;
+        margin-bottom: 14px;
+      }
+      .card-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        margin-bottom: 10px;
+      }
+      .card-title {
+        margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .04em;
+        text-transform: uppercase; color: var(--text-soft);
+      }
+      .card-hint { font-size: 11.5px; color: var(--subtle); margin: 0 0 11px; }
+      .badge-count {
+        background: var(--brand-soft); color: var(--brand-dark);
+        font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px;
+      }
+
+      /* ---------- Forms ---------- */
+      label { font-weight: 600; font-size: 11.5px; color: var(--text-soft); }
+      select, input[type="text"], input[type="number"], input[type="month"] {
+        width: 100%;
+        padding: 7px 9px;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-sm);
+        font-family: inherit;
+        font-size: 12.5px;
+        color: var(--text);
+        background: var(--surface);
+        transition: border-color .15s ease, box-shadow .15s ease;
+      }
+      select:focus, input:focus {
+        outline: none;
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+      }
+      input:disabled, select:disabled { background: var(--surface-2); color: var(--subtle); cursor: not-allowed; }
+      input.is-invalid { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, .12); }
+
+      /* ---------- Tabs ---------- */
+      .tab-strip {
+        display: flex; gap: 4px; padding: 3px;
+        background: var(--surface-2); border: 1px solid var(--border);
+        border-radius: 10px; margin-bottom: 14px;
+      }
+      .tab {
+        display: inline-flex; align-items: center; gap: 6px;
+        border: 0; background: transparent; cursor: pointer;
+        padding: 7px 12px; border-radius: 7px;
+        font-family: inherit; font-size: 12px; font-weight: 600; color: var(--muted);
+        transition: background .15s ease, color .15s ease;
+      }
+      .tab:hover { color: var(--text); }
+      .tab.is-active { background: var(--surface); color: var(--brand-dark); box-shadow: var(--shadow-sm); }
+      .tab-count {
+        font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px;
+        background: var(--border); color: var(--text-soft); font-variant-numeric: tabular-nums;
+      }
+      .tab.is-active .tab-count { background: var(--brand-soft); color: var(--brand-dark); }
+
+      .panel { display: none; }
+      .panel.is-active { display: block; }
+
+      /* ---------- Row grids ---------- */
+      /* New rows are deliberately NOT here. They are a two-line flex card, and
+         this rule's align-items:center would survive the display override and
+         centre each line at its content width instead of stretching it — which
+         collapses the Type and Channel selects to the width of their text. */
+      .grid-head, .entry-row {
+        display: grid;
+        gap: 8px;
+        align-items: center;
+      }
+      /* The ledger rows are taller than the dialog, so each section scrolls
+         inside its own box. Head and rows share one min-width, which is what
+         keeps the columns lined up if the box ever does slide sideways.
+
+         Both axes have to live on this one element: the header can only freeze
+         against the scrollport it sits in, so an outer page scroll plus an
+         inner overflow-x would leave it stuck to nothing. */
+      .grid-scroll { overflow: auto; max-height: 46vh; padding-bottom: 3px; }
+      /* Just wide enough for every column at its readable minimum, so a full
+         row fits the 750px dialog and sideways scrolling is the exception
+         rather than the rule. Nothing is frozen: the row slides as one piece,
+         so no cell can ever end up hidden under another one. */
+      .grid-scroll-inner { min-width: 600px; }
+      .grid-scroll-inner.is-income { min-width: 340px; }
+      /* New rows do NOT use the shared grid. Nine controls will not read in a
+         750px dialog on one line, and widening them into a sideways scroll only
+         trades cramping for hunting. Each new row is a two-line card instead:
+         what identifies the row on top, how it is paid underneath, every field
+         labelled and none of it below its readable width. */
+      .add-stack { display: flex; flex-direction: column; gap: 8px; }
+
+      .grid-ledger { grid-template-columns: minmax(96px, 1.3fr) minmax(64px, .8fr) minmax(92px, 1.05fr) minmax(100px, 1.55fr) 40px 52px 40px 34px; }
+      .grid-income { grid-template-columns: minmax(96px, 1.3fr) minmax(64px, .8fr) minmax(92px, 1.05fr) 34px; }
+
+      .grid-head {
+        --row-bg: var(--surface);
+        position: sticky; top: 0; z-index: 3;
+        padding: 4px 9px 7px;
+        background: var(--row-bg);
+        font-size: 10px; font-weight: 700; letter-spacing: .05em;
+        text-transform: uppercase; color: var(--subtle);
+      }
+      .grid-head .right { text-align: right; }
+      .grid-head .center { text-align: center; }
+
+      .row-stack { display: flex; flex-direction: column; gap: 6px; }
+
+      .add-row {
+        display: flex; flex-direction: column; gap: 7px;
+        align-items: stretch;
+      }
+      /* Line 1 identifies the row, line 2 says how it is paid. The description
+         takes the slack on both, so the fixed controls keep a stable width.
+
+         Every child is the same two-part shape — a label over a control — and
+         the line aligns to the top. That is what keeps a checkbox and a text
+         box on the same baseline without tuning offsets against font metrics,
+         and it lets the amount's formula preview grow downwards without
+         dragging the rest of the line with it. */
+      .add-line { display: flex; align-items: flex-start; gap: 8px; }
+      .field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+      .field > span {
+        height: 13px; line-height: 13px;
+        font-size: 9.5px; font-weight: 700; letter-spacing: .05em;
+        text-transform: uppercase; color: var(--subtle);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      /* Holds a control that is not a full-width input at exactly one input's
+         height, so its column lines up with the ones that are. */
+      .field-box { display: flex; align-items: center; justify-content: center; height: 31px; }
+      .field-box input[type="checkbox"] {
+        width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--brand);
+      }
+      .field-check { flex: 0 0 auto; cursor: pointer; }
+      .field-check.is-ok .field-box input { accent-color: var(--ok); }
+      .field-grow { flex: 1 1 auto; }
+      /* Wide enough for "Autodeduct Jajan", the longest sheet name. */
+      .field-sheet { flex: 0 0 150px; }
+      .field-type { flex: 1 1 42%; }
+      .field-channel { flex: 1 1 58%; }
+      .field-amount { flex: 0 0 132px; }
+      .field-left { flex: 0 0 58px; }
+      .field-btn { flex: 0 0 auto; }
+
+      .entry-row, .add-row {
+        --row-bg: var(--surface-2);
+        padding: 7px 9px;
+        background: var(--row-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        transition: background .12s ease, border-color .12s ease, opacity .12s ease;
+      }
+      .entry-row:hover, .add-row:hover { border-color: var(--border-strong); }
+      .add-row { padding: 9px 10px; }
+      .entry-row.is-edited { --row-bg: var(--brand-soft); border-color: var(--brand-border); }
+      .entry-row.is-doomed { --row-bg: var(--danger-soft); border-color: var(--danger-border); opacity: .55; }
+
+      /* Wraps instead of truncating, so a long List or Type is read in full;
+         the row simply grows taller. `anywhere` also breaks a single word
+         that is wider than its column. */
+      .cell-static { min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+      .cell-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+      .cell-sub { font-size: 12px; color: var(--muted); }
+      .tag {
+        margin-left: 5px; padding: 1px 6px; border-radius: 999px;
+        background: #e0e7ff; color: #4338ca;
+        font-size: 9.5px; font-weight: 700; letter-spacing: .02em;
+      }
+
+      .amount-cell { min-width: 0; }
+      .amount-cell input { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+      .calc-preview {
+        display: none;
+        margin-top: 2px; text-align: right;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 9.5px; font-weight: 600; color: var(--ok);
+      }
+      .calc-preview.is-error { color: var(--danger); }
+      .calc-preview.is-shown { display: block; }
+
+      .in-remaining { -moz-appearance: textfield; appearance: textfield; }
+      .in-remaining::-webkit-outer-spin-button,
+      .in-remaining::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+      .mini-check { display: flex; align-items: center; justify-content: center; }
+      .mini-check input { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--brand); }
+      .mini-check.is-danger input { accent-color: var(--danger); }
+      .mini-check.is-ok input { accent-color: var(--ok); }
+
+      .icon-btn {
+        display: flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; padding: 0;
+        border: 0; border-radius: 6px; background: transparent;
+        color: var(--subtle); cursor: pointer;
+        transition: color .15s ease, background .15s ease;
+      }
+      .icon-btn:hover { color: var(--danger); background: rgba(220, 38, 38, .09); }
+
+      .btn-ghost {
+        margin-top: 10px; padding: 8px 14px;
+        border: 1px dashed var(--brand); border-radius: var(--radius-sm);
+        background: transparent; color: var(--brand); cursor: pointer;
+        font-family: inherit; font-size: 12px; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 6px;
+        transition: background .15s ease, border-style .15s ease;
+      }
+      .btn-ghost:hover { background: var(--brand-soft); border-style: solid; }
+
+      .btn-quiet {
+        padding: 7px 13px; border-radius: var(--radius-sm);
+        border: 1px solid var(--border-strong); background: var(--surface);
+        color: var(--text-soft); cursor: pointer;
+        font-family: inherit; font-size: 12px; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
+        transition: background .15s ease, color .15s ease;
+      }
+      .btn-quiet:hover { background: var(--surface-2); color: var(--text); }
+
+      .empty, .loading {
+        padding: 26px 10px; text-align: center;
+        font-size: 12px; color: var(--subtle); font-style: italic;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+
+      /* ---------- Alert ---------- */
+      .alert {
+        display: none;
+        background: var(--danger-soft); border: 1px solid var(--danger-border);
+        color: #991b1b; border-radius: var(--radius-sm);
+        padding: 10px 12px; margin-bottom: 12px; font-size: 12px; font-weight: 500;
+      }
+      .alert.is-shown { display: block; }
+
+      /* ---------- Action bar ---------- */
+      .actionbar {
+        flex: 0 0 auto;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        padding: 10px 18px 12px;
+        box-shadow: 0 -6px 18px -16px rgba(15, 23, 42, .6);
+      }
+      /* Wraps rather than squeezing: five cards will not sit on one line in a
+         750px dialog once the values are real rupiah figures. */
+      .stat-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 9px; }
+      .stat {
+        flex: 1 1 118px; min-width: 0;
+        background: var(--surface-2); border: 1px solid var(--border);
+        border-radius: var(--radius-sm); padding: 6px 10px;
+      }
+      /* Three counts in one card: the slashes are scaffolding, the digits are
+         the content, so the separators are dimmed rather than competing. */
+      .stat .sep { color: var(--subtle); font-weight: 500; margin: 0 1px; }
+      .stat .is-zero { color: var(--subtle); }
+
+      /* Money, not counts — tinted so the two kinds do not read as one row. */
+      .stat.is-money b { font-size: 12px; }
+      .stat.is-paid { background: var(--ok-soft); border-color: var(--ok-border); }
+      .stat.is-paid b { color: #047857; }
+      .stat.is-outstanding { background: var(--surface); }
+      .stat.is-outstanding b { color: var(--text-soft); }
+      /* Direct child only: the value line holds spans of its own. */
+      .stat > span { display: block; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--subtle); }
+      .stat b span { display: inline; font-size: inherit; letter-spacing: normal; text-transform: none; color: inherit; }
+      .stat b { display: block; font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+
+      .cta-row { display: flex; align-items: center; gap: 12px; }
+      .pill {
+        flex: 1 1 auto; min-width: 0;
+        font-size: 11.5px; font-weight: 600;
+        padding: 7px 11px; border-radius: 999px;
+        border: 1px solid var(--border); background: var(--surface-2); color: var(--muted);
+      }
+      .pill.is-ready { border-color: #a7f3d0; background: var(--ok-soft); color: #166534; }
+      .pill.is-error { border-color: var(--danger-border); background: var(--danger-soft); color: #991b1b; }
+
+      .btn {
+        flex: 0 0 auto;
+        border: 0; cursor: pointer;
+        font-family: inherit; font-size: 14px; font-weight: 700;
+        padding: 11px 26px; border-radius: 10px;
+        color: #fff;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        box-shadow: 0 4px 10px -3px rgba(37, 99, 235, .45);
+        transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+      }
+      .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 16px -4px rgba(37, 99, 235, .5); }
+      .btn:disabled { background: var(--border-strong); color: #f8fafc; box-shadow: none; cursor: not-allowed; }
+
+      /* ---------- Toast ---------- */
+      .toast {
+        position: fixed; left: 50%; bottom: 22px;
+        transform: translateX(-50%) translateY(120px);
+        display: flex; align-items: center; gap: 7px;
+        padding: 9px 18px; border-radius: 999px;
+        background: var(--ok); color: #fff;
+        font-size: 12.5px; font-weight: 600;
+        box-shadow: 0 6px 18px -6px rgba(5, 150, 105, .6);
+        transition: transform .3s cubic-bezier(.18, .89, .32, 1.28);
+        z-index: 100;
+      }
+      .toast.is-shown { transform: translateX(-50%) translateY(0); }
+
+      ::-webkit-scrollbar { width: 9px; height: 9px; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; border: 2px solid var(--bg); }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      ::-webkit-scrollbar-track { background: transparent; }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+
+      <header class="topbar">
+        <div>
+          <div class="topbar-title">Monthly Data</div>
+          <div class="topbar-sub" id="periodSummary">Loading&hellip;</div>
+        </div>
+        <div class="topbar-period">
+          <label class="sr-only" for="monthPicker">Month</label>
+          <input type="month" id="monthPicker">
+          <button type="button" class="btn-quiet" id="refreshBtn">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.254-.675 5.002 5.002 0 009.28 1.618H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.675-1.254z" clip-rule="evenodd" />
+            </svg>
+            <span>Reload</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="content" id="content">
+
+        <div class="alert" id="alertBanner" role="alert"></div>
+
+        <div class="tab-strip" id="tabStrip" role="tablist">
+          <button type="button" class="tab is-active" role="tab" data-panel="panelExisting">
+            Existing entries <span class="tab-count" id="countExisting">0</span>
+          </button>
+          <button type="button" class="tab" role="tab" data-panel="panelAdd">
+            Add new <span class="tab-count" id="countAdd">0</span>
+          </button>
+        </div>
+
+        <!-- EXISTING ENTRIES -->
+        <div class="panel is-active" id="panelExisting">
+          <div id="entriesContainer"></div>
+        </div>
+
+        <!-- NEW ROWS -->
+        <div class="panel" id="panelAdd">
+          <section class="card">
+            <div class="card-head">
+              <h2 class="card-title">New rows</h2>
+              <div class="card-note">One save, any mix of sheets</div>
+            </div>
+            <p class="card-hint">
+              Each row picks its own sheet, so a Saving row and an Expense row can go in together.
+              A new row starts on the sheet above it. Amounts accept a plain number or a formula
+              &mdash; <b>120.000*2</b> is saved as 240.000.
+            </p>
+
+            <div class="grid-scroll">
+              <div class="add-stack" id="addRowsContainer"></div>
+            </div>
+
+            <button type="button" class="btn-ghost" id="addRowBtn">
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+              </svg>
+              <span>Add row</span>
+            </button>
+          </section>
+        </div>
+
+      </main>
+
+      <footer class="actionbar">
+        <div class="stat-strip">
+          <div class="stat" title="New / Edit / Delete">
+            <span>N / E / D</span><b id="statCounts" class="num">0 / 0 / 0</b></div>
+          <div class="stat is-money is-paid" title="Rows you are ticking as paid in this session">
+            <span>Paying now</span><b id="statPaidNow" class="num">IDR 0</b></div>
+          <div class="stat is-money is-outstanding" title="Still unpaid in this month once these changes are saved">
+            <span>Left unpaid</span><b id="statUnpaid" class="num">IDR 0</b></div>
+        </div>
+        <div class="cta-row">
+          <div class="pill" id="statusPill" aria-live="polite">Nothing to save yet</div>
+          <button type="button" class="btn" id="saveBtn" disabled>Save Changes</button>
+        </div>
+      </footer>
+
+    </div>
+
+    <div class="toast" id="toast"><span id="toastMsg">Saved</span></div>
+
+    <script>
+      /**
+       * The month to open on, stamped in by the server from the spreadsheet's
+       * timezone. Falls back to the browser clock if the file is ever served
+       * untemplated.
+       */
+      var DEFAULT_MONTH = <?!= defaultMonthLiteral || '""' ?>;
+    </script>
+
+    <script>
+      (function () {
+        'use strict';
+
+        var SHEET_ORDER = ['Income', 'Saving', 'Expense', 'Ibadah', 'Autodeduct Jajan'];
+        var DASH = '—';
+        var ELLIPSIS = '…';
+        var IDR_FORMAT = new Intl.NumberFormat('id-ID');
+        var ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+        var dom = {};
+        var state = { entries: [], typeOptions: {}, channels: [], addable: [], sortFields: {} };
+        var addRowSeq = 0;
+        var loadToken = 0;
+        var isSaving = false;
+
+        /* ---------------- helpers ---------------- */
+
+        function byId(id) { return document.getElementById(id); }
+
+        function toArray(nodeList) { return Array.prototype.slice.call(nodeList); }
+
+        function escapeHtml(value) {
+          return String(value === null || value === undefined ? '' : value)
+              .replace(/[&<>"']/g, function (ch) { return ESCAPES[ch]; });
+        }
+
+        /**
+         * Writes the New / Edit / Delete card. Values are integers from
+         * collectChanges, so building the markup here carries no escaping risk.
+         * @param {number} added New rows.
+         * @param {number} edited Rows being updated.
+         * @param {number} deleted Rows being removed.
+         */
+        function setCounts(added, edited, deleted) {
+          var html = [added, edited, deleted].map(function (count) {
+            return '<span' + (count === 0 ? ' class="is-zero"' : '') + '>' + count + '</span>';
+          }).join('<span class="sep">/</span>');
+          if (dom.statCounts.innerHTML !== html) dom.statCounts.innerHTML = html;
+        }
+
+        function setText(el, text) {
+          if (el && el.textContent !== text) el.textContent = text;
+        }
+
+        function formatDigits(value) {
+          return IDR_FORMAT.format(Math.round(value || 0));
+        }
+
+        /**
+         * Reads an amount field: a plain number ('1.200.000') or an arithmetic
+         * expression ('120.000*2'). Returns NaN when it is empty or unusable.
+         * The character whitelist is what keeps eval-by-Function safe here.
+         */
+        function parseAmount(text) {
+          var clean = String(text === null || text === undefined ? '' : text)
+              .replace(/\./g, '').replace(/\s+/g, '');
+          if (clean === '' || !/^[\d+\-*/().]+$/.test(clean)) return NaN;
+
+          if (!/[+\-*/]/.test(clean)) {
+            var plain = parseFloat(clean);
+            return isFinite(plain) ? plain : NaN;
+          }
+          try {
+            var computed = new Function('return (' + clean + ');')();
+            return (typeof computed === 'number' && isFinite(computed)) ? computed : NaN;
+          } catch (e) {
+            return NaN;
+          }
+        }
+
+        function isFormula(text) {
+          return /[+\-*/]/.test(String(text).replace(/\./g, ''));
+        }
+
+        function showAlert(message) {
+          dom.alertBanner.textContent = message;
+          dom.alertBanner.classList.add('is-shown');
+          dom.content.scrollTop = 0;
+        }
+
+        function clearAlert() { dom.alertBanner.classList.remove('is-shown'); }
+
+        function toast(message) {
+          setText(dom.toastMsg, message);
+          dom.toast.classList.add('is-shown');
+          setTimeout(function () { dom.toast.classList.remove('is-shown'); }, 2600);
+        }
+
+        /* ---------------- boot ---------------- */
+
+        function init() {
+          cacheDom();
+          setDefaultMonth();
+          bindEvents();
+          load();
+        }
+
+        function cacheDom() {
+          ['content', 'alertBanner', 'periodSummary', 'monthPicker', 'refreshBtn',
+           'tabStrip', 'countExisting', 'countAdd', 'entriesContainer',
+           'addRowsContainer', 'addRowBtn',
+           'statCounts', 'statPaidNow', 'statUnpaid',
+           'statusPill', 'saveBtn',
+           'toast', 'toastMsg'
+          ].forEach(function (id) { dom[id] = byId(id); });
+        }
+
+        /** Opens on the current month; the server decides which one that is. */
+        function setDefaultMonth() {
+          dom.monthPicker.value = isMonthKey(DEFAULT_MONTH)
+              ? DEFAULT_MONTH
+              : browserMonthKey();
+        }
+
+        function isMonthKey(value) {
+          return typeof value === 'string' && /^\d{4}-\d{2}$/.test(value);
+        }
+
+        function browserMonthKey() {
+          var today = new Date();
+          return today.getFullYear() + '-' +
+              String(today.getMonth() + 1).padStart(2, '0');
+        }
+
+        function bindEvents() {
+          dom.monthPicker.addEventListener('change', load);
+          dom.refreshBtn.addEventListener('click', load);
+          dom.addRowBtn.addEventListener('click', function () { addNewRow(); });
+          dom.tabStrip.addEventListener('click', onTabClick);
+          dom.content.addEventListener('click', onContentClick);
+          dom.content.addEventListener('input', onContentInput);
+          dom.content.addEventListener('change', onContentChange);
+          dom.saveBtn.addEventListener('click', save);
+        }
+
+        /* ---------------- loading ---------------- */
+
+        function load() {
+          var token = ++loadToken;
+          var month = dom.monthPicker.value;
+
+          clearAlert();
+          if (!month) {
+            setText(dom.periodSummary, 'Pick a month to begin');
+            return;
+          }
+
+          setText(dom.periodSummary, 'Loading ' + month + ELLIPSIS);
+          dom.entriesContainer.innerHTML = '<div class="loading">Loading' + ELLIPSIS + '</div>';
+          dom.saveBtn.disabled = true;
+
+          google.script.run
+              .withSuccessHandler(function (payload) {
+                if (token === loadToken) onLoaded(payload);
+              })
+              .withFailureHandler(function (error) {
+                if (token !== loadToken) return;
+                setText(dom.periodSummary, 'Load failed');
+                dom.entriesContainer.innerHTML = '<div class="empty">Unavailable.</div>';
+                showAlert('Could not load this month: ' + messageOf(error));
+              })
+              .getMonthlyEntryPayload(month);
+        }
+
+        function messageOf(error) {
+          return (error && error.message) ? error.message : String(error);
+        }
+
+        function onLoaded(payload) {
+          state.entries = payload.entries || [];
+          state.typeOptions = payload.typeOptions || {};
+          state.channels = payload.paymentChannels || [];
+          state.addable = payload.addableSheets || [];
+          state.sortFields = payload.sortFields || {};
+
+          setText(dom.periodSummary,
+              state.entries.length + (state.entries.length === 1 ? ' row in ' : ' rows in ') +
+              payload.targetDate);
+
+          renderEntries();
+          // Reloading rebuilds the option lists, so every staged row's selects
+          // have to be refilled against the month that just came back.
+          refreshAddRowOptions();
+          if (!dom.addRowsContainer.children.length) addNewRow();
+          recalculate();
+        }
+
+        /* ---------------- existing entries ---------------- */
+
+        function renderEntries() {
+          if (!state.entries.length) {
+            dom.entriesContainer.innerHTML =
+                '<div class="empty">No rows recorded for this month yet. Use ' +
+                '&ldquo;Add new&rdquo; to create some.</div>';
+            return;
+          }
+
+          var grouped = {};
+          state.entries.forEach(function (entry, index) {
+            entry.index = index;
+            (grouped[entry.sheet] = grouped[entry.sheet] || []).push(entry);
+          });
+
+          dom.entriesContainer.innerHTML = SHEET_ORDER.map(function (sheetName) {
+            var items = grouped[sheetName];
+            if (!items || !items.length) return '';
+            sortSection(items, sheetName);
+            return sheetCardHtml(sheetName, items);
+          }).join('');
+        }
+
+        /**
+         * Orders one section by the same keys the sheet itself is sorted by.
+         * The field order comes from the server (LEDGER_SORT_KEYS), so the sheet
+         * sort and this form can never drift apart. An unknown sheet keeps the
+         * order the rows came back in.
+         */
+        function sortSection(items, sheetName) {
+          var fields = state.sortFields[sheetName];
+          if (!fields || !fields.length) return;
+
+          items.sort(function (a, b) {
+            for (var i = 0; i < fields.length; i++) {
+              var diff = compareText(a[fields[i]], b[fields[i]]);
+              if (diff) return diff;
+            }
+            return 0;
+          });
+        }
+
+        /** Ascending text compare; blanks sort last, as they do in Sheets. */
+        function compareText(a, b) {
+          var left = String(a === null || a === undefined ? '' : a).toLowerCase();
+          var right = String(b === null || b === undefined ? '' : b).toLowerCase();
+          if (left === right) return 0;
+          if (left === '') return 1;
+          if (right === '') return -1;
+          return left.localeCompare(right);
+        }
+
+        function sheetCardHtml(sheetName, items) {
+          var isIncome = (sheetName === 'Income');
+          var gridClass = isIncome ? 'grid-income' : 'grid-ledger';
+
+          var head = '<div class="grid-head ' + gridClass + '">' +
+              '<span>' + (isIncome ? 'Person' : 'List') + '</span>' +
+              '<span>' + (isIncome ? 'Category' : 'Type') + '</span>' +
+              '<span class="right">Amount</span>' +
+              (isIncome ? '' :
+                  '<span>Channel</span><span class="center">Cicilan</span>' +
+                  '<span class="center">Left</span><span class="center">Paid</span>') +
+              '<span class="center">Del</span>' +
+              '</div>';
+
+          return '<section class="card">' +
+              '<div class="card-head">' +
+                '<h2 class="card-title">' + escapeHtml(sheetName) + '</h2>' +
+                '<span class="badge-count">' + items.length +
+                (items.length === 1 ? ' row' : ' rows') + '</span>' +
+              '</div>' +
+              '<div class="grid-scroll">' +
+                '<div class="grid-scroll-inner' + (isIncome ? ' is-income' : '') + '">' +
+                  head +
+                  '<div class="row-stack">' + items.map(entryRowHtml).join('') + '</div>' +
+                '</div>' +
+              '</div>' +
+              '</section>';
+        }
+
+        function entryRowHtml(entry) {
+          var isIncome = entry.isIncome;
+          var remaining = entry.isCicilan ? String(entry.remainingMonth || '') : '';
+          var amountText = formatDigits(entry.amount);
+
+          var cells =
+              '<div class="cell-static cell-name" title="' + escapeHtml(entry.list) + '">' +
+                escapeHtml(entry.list) +
+                (entry.isCicilan ? '<span class="tag">Cicilan</span>' : '') +
+              '</div>' +
+              '<div class="cell-static cell-sub" title="' + escapeHtml(entry.type) + '">' +
+                escapeHtml(entry.type) + '</div>' +
+              amountCellHtml(amountText, 'Amount for ' + entry.list);
+
+          if (!isIncome) {
+            cells +=
+                '<select class="in-channel" aria-label="Payment channel">' +
+                  channelOptionsHtml(entry.channel) +
+                '</select>' +
+                '<label class="mini-check" title="Cicilan?">' +
+                  '<input type="checkbox" class="in-cicilan"' + (entry.isCicilan ? ' checked' : '') + '>' +
+                '</label>' +
+                '<input type="number" class="in-remaining" min="1" step="1" value="' +
+                  escapeHtml(remaining) + '"' + (entry.isCicilan ? '' : ' disabled') +
+                  ' aria-label="Payments remaining" style="text-align:center;">' +
+                '<label class="mini-check is-ok" title="Sudah Bayar?">' +
+                  '<input type="checkbox" class="in-paid"' + (entry.isPaid ? ' checked' : '') + '>' +
+                '</label>';
+          }
+
+          cells += '<label class="mini-check is-danger" title="Delete this row">' +
+              '<input type="checkbox" class="in-delete"></label>';
+
+          // data-amount mirrors what the field displays, so an untouched row
+          // always reads back identical and is never mistaken for an edit.
+          return '<div class="entry-row ' + (isIncome ? 'grid-income' : 'grid-ledger') + '"' +
+              ' data-index="' + entry.index + '"' +
+              ' data-amount="' + escapeHtml(String(Math.round(entry.amount || 0))) + '"' +
+              ' data-channel="' + escapeHtml(entry.channel) + '"' +
+              ' data-cicilan="' + (entry.isCicilan ? '1' : '0') + '"' +
+              ' data-remaining="' + escapeHtml(remaining) + '"' +
+              ' data-paid="' + (entry.isPaid ? '1' : '0') + '">' +
+              cells + '</div>';
+        }
+
+        function amountCellHtml(value, ariaLabel) {
+          return '<div class="amount-cell">' +
+              '<input type="text" class="in-amount" value="' + escapeHtml(value) + '"' +
+              ' autocomplete="off" spellcheck="false" aria-label="' + escapeHtml(ariaLabel) + '">' +
+              '<div class="calc-preview"></div>' +
+              '</div>';
+        }
+
+        function channelOptionsHtml(current) {
+          var options = state.channels.slice();
+          var selected = current || '';
+          if (selected !== '' && options.indexOf(selected) === -1) options.unshift(selected);
+
+          // A lone dash looks identical whether the list is empty or the row
+          // simply has no channel yet, so an empty Master list says so.
+          if (!options.length) {
+            return '<option value="">' + DASH + '</option>' +
+                '<option value="" disabled>No channels found in Master I3:I</option>';
+          }
+
+          return '<option value="">' + DASH + '</option>' + options.map(function (channel) {
+            return '<option value="' + escapeHtml(channel) + '"' +
+                (channel === selected ? ' selected' : '') + '>' + escapeHtml(channel) + '</option>';
+          }).join('');
+        }
+
+        /* ---------------- new rows ---------------- */
+
+        /** Options for a row's destination sheet, from the payload's addable list. */
+        function sheetOptionsHtml(current) {
+          return state.addable.map(function (sheetName) {
+            return '<option value="' + escapeHtml(sheetName) + '"' +
+                (sheetName === current ? ' selected' : '') + '>' +
+                escapeHtml(sheetName) + '</option>';
+          }).join('');
+        }
+
+        /**
+         * The sheet a fresh row should start on: whatever the last staged row
+         * uses, so a run of rows for one sheet stays a single click each.
+         * @return {string} A sheet name, or '' when none is addable.
+         */
+        function nextRowSheet() {
+          var rows = dom.addRowsContainer.querySelectorAll('.add-row .in-sheet');
+          if (rows.length) {
+            var last = rows[rows.length - 1].value;
+            if (state.addable.indexOf(last) !== -1) return last;
+          }
+          if (state.addable.indexOf('Expense') !== -1) return 'Expense';
+          return state.addable.length ? state.addable[0] : '';
+        }
+
+        function addNewRow() {
+          var rowId = ++addRowSeq;
+          var row = document.createElement('div');
+          row.className = 'add-row';
+          row.setAttribute('data-add-row', rowId);
+          row.innerHTML =
+              '<div class="add-line">' +
+                '<label class="field field-sheet"><span>Sheet</span>' +
+                  '<select class="in-sheet">' + sheetOptionsHtml(nextRowSheet()) + '</select>' +
+                '</label>' +
+                '<label class="field field-grow"><span>List description</span>' +
+                  '<input type="text" class="in-list" placeholder="e.g. Listrik" autocomplete="off">' +
+                '</label>' +
+                '<label class="field field-amount"><span>Amount</span>' +
+                  amountCellHtml('', 'Amount for the new row') +
+                '</label>' +
+                '<div class="field field-btn"><span></span>' +
+                  '<div class="field-box">' +
+                    '<button type="button" class="icon-btn" data-remove-row="1" title="Remove this row">' +
+                      '<svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">' +
+                        '<path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />' +
+                      '</svg>' +
+                    '</button>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="add-line">' +
+                '<label class="field field-type"><span>Type</span>' +
+                  '<select class="in-type"></select>' +
+                '</label>' +
+                '<label class="field field-channel"><span>Channel</span>' +
+                  '<select class="in-channel">' + channelOptionsHtml('') + '</select>' +
+                '</label>' +
+                '<label class="field field-check" title="Cicilan?"><span>Cicilan</span>' +
+                  '<div class="field-box"><input type="checkbox" class="in-cicilan"></div>' +
+                '</label>' +
+                '<label class="field field-left"><span>Left</span>' +
+                  '<input type="number" class="in-remaining" min="1" step="1" disabled' +
+                    ' aria-label="Payments remaining" style="text-align:center;">' +
+                '</label>' +
+                '<label class="field field-check is-ok" title="Sudah Bayar?"><span>Paid</span>' +
+                  '<div class="field-box"><input type="checkbox" class="in-paid"></div>' +
+                '</label>' +
+              '</div>';
+
+          dom.addRowsContainer.appendChild(row);
+          fillTypeSelect(row.querySelector('.in-type'));
+          recalculate();
+        }
+
+        /**
+         * Repoints every staged row at the option lists the payload just
+         * brought. All three selects are rebuilt: a row staged before a reload
+         * otherwise keeps the previous month's lists, and a row built while a
+         * list was still empty would keep showing nothing to choose from.
+         */
+        function refreshAddRowOptions() {
+          toArray(dom.addRowsContainer.querySelectorAll('.add-row')).forEach(function (row) {
+            var sheetSelect = row.querySelector('.in-sheet');
+            var chosen = sheetSelect.value;
+            sheetSelect.innerHTML = sheetOptionsHtml(
+                state.addable.indexOf(chosen) !== -1 ? chosen : nextRowSheet());
+            fillTypeSelect(row.querySelector('.in-type'));
+
+            var channelSelect = row.querySelector('.in-channel');
+            channelSelect.innerHTML = channelOptionsHtml(channelSelect.value);
+          });
+        }
+
+        /**
+         * Fills one row's Type list from that row's own sheet. A type the new
+         * sheet also offers is kept, so switching Expense -> Saving does not
+         * clear a category both lists share.
+         */
+        function fillTypeSelect(select) {
+          var previous = select.value;
+          var row = select.closest('.add-row');
+          var sheetSelect = row ? row.querySelector('.in-sheet') : null;
+          var list = state.typeOptions[sheetSelect ? sheetSelect.value : ''] || [];
+
+          select.innerHTML = '<option value="">Select' + ELLIPSIS + '</option>' +
+              list.map(function (type) {
+                return '<option value="' + escapeHtml(type) + '">' + escapeHtml(type) + '</option>';
+              }).join('');
+          if (previous && list.indexOf(previous) !== -1) select.value = previous;
+        }
+
+        /* ---------------- interaction ---------------- */
+
+        function onTabClick(event) {
+          var tab = event.target.closest ? event.target.closest('.tab') : null;
+          if (!tab) return;
+
+          toArray(dom.tabStrip.querySelectorAll('.tab')).forEach(function (el) {
+            el.classList.toggle('is-active', el === tab);
+          });
+          ['panelExisting', 'panelAdd'].forEach(function (id) {
+            byId(id).classList.toggle('is-active', id === tab.getAttribute('data-panel'));
+          });
+        }
+
+        function onContentClick(event) {
+          var remove = event.target.closest ? event.target.closest('[data-remove-row]') : null;
+          if (!remove) return;
+          // The button sits inside the row's first line, not the row itself.
+          remove.closest('.add-row').remove();
+          if (!dom.addRowsContainer.children.length) addNewRow();
+          recalculate();
+        }
+
+        function onContentInput(event) {
+          if (event.target.classList.contains('in-amount')) {
+            updateCalcPreview(event.target);
+          }
+          recalculate();
+        }
+
+        function onContentChange(event) {
+          var target = event.target;
+          if (target.classList.contains('in-cicilan')) {
+            syncCicilanRow(target);
+          } else if (target.classList.contains('in-amount')) {
+            reformatAmount(target);
+          } else if (target.classList.contains('in-sheet')) {
+            fillTypeSelect(target.closest('.add-row').querySelector('.in-type'));
+          }
+          recalculate();
+        }
+
+        /** Formats a plain number back to '1.234.567'; formulas are left alone. */
+        function reformatAmount(field) {
+          var raw = field.value.trim();
+          if (raw === '' || isFormula(raw)) return;
+          var amount = parseAmount(raw);
+          if (!isNaN(amount)) field.value = formatDigits(amount);
+        }
+
+        function updateCalcPreview(field) {
+          var preview = field.parentNode.querySelector('.calc-preview');
+          var raw = field.value.trim();
+
+          if (raw === '' || !isFormula(raw)) {
+            preview.classList.remove('is-shown', 'is-error');
+            return;
+          }
+          var amount = parseAmount(raw);
+          preview.classList.add('is-shown');
+          preview.classList.toggle('is-error', isNaN(amount));
+          preview.textContent = isNaN(amount) ? 'invalid' : '= ' + formatDigits(amount);
+        }
+
+        function syncCicilanRow(checkbox) {
+          var remaining = checkbox.closest('.entry-row, .add-row').querySelector('.in-remaining');
+          if (!remaining) return;
+          remaining.disabled = !checkbox.checked;
+          if (!checkbox.checked) remaining.value = '';
+        }
+
+        /* ---------------- change detection ---------------- */
+
+        /**
+         * Adds a row's amount to the payment totals.
+         *
+         * `paidNow` counts only rows being ticked in this session: a row that
+         * arrived already ticked is money settled before today and would make
+         * the figure a month-to-date total instead of "what this save pays".
+         * Income rows carry no paid column and are skipped by the caller.
+         *
+         * @param {Object} totals Accumulator.
+         * @param {number} amount Row amount (NaN when the field is unusable).
+         * @param {boolean} isPaid Paid state as it stands now.
+         * @param {boolean} wasPaid Paid state the row was loaded with.
+         */
+        function tallyPayment(totals, amount, isPaid, wasPaid) {
+          if (!isFinite(amount) || amount <= 0) return;
+          if (isPaid && !wasPaid) totals.paidNow += amount;
+          if (!isPaid) totals.unpaid += amount;
+        }
+
+        /** Everything the user has staged, ready for validation or submission. */
+        function collectChanges() {
+          var changes = {
+            updates: [], deletions: [], additions: [], problems: [],
+            paidNow: 0, unpaid: 0
+          };
+
+          toArray(dom.entriesContainer.querySelectorAll('.entry-row')).forEach(function (row) {
+            var entry = state.entries[parseInt(row.getAttribute('data-index'), 10)];
+            if (!entry) return;
+
+            var isDoomed = row.querySelector('.in-delete').checked;
+            row.classList.toggle('is-doomed', isDoomed);
+
+            if (isDoomed) {
+              row.classList.remove('is-edited');
+              clearInvalid(row);
+              changes.deletions.push({
+                sheet: entry.sheet, rowNum: entry.rowNum,
+                signature: entry.signature, list: entry.list
+              });
+              return;
+            }
+
+            var values = readRow(row, entry.isIncome);
+            var isEdited = hasRowChanged(row, values);
+            row.classList.toggle('is-edited', isEdited);
+
+            // Every surviving ledger row counts towards the totals, edited or
+            // not — "left unpaid" is the month's position, not a change count.
+            if (!entry.isIncome) {
+              tallyPayment(changes, values.amount, values.isPaid,
+                  row.getAttribute('data-paid') === '1');
+            }
+
+            // A row nobody touched is never validated, so a pre-existing oddity
+            // in the sheet can't block the rest of the form from saving.
+            if (!isEdited) {
+              clearInvalid(row);
+              return;
+            }
+
+            validateRow(row, values, entry.sheet + ' / ' + entry.list, changes.problems);
+            changes.updates.push({
+              sheet: entry.sheet,
+              rowNum: entry.rowNum,
+              signature: entry.signature,
+              list: entry.list,
+              amount: values.amount,
+              channel: values.channel,
+              isCicilan: values.isCicilan,
+              remainingMonth: values.remainingMonth,
+              isPaid: values.isPaid
+            });
+          });
+
+          toArray(dom.addRowsContainer.querySelectorAll('.add-row')).forEach(function (row) {
+            // Each row carries its own destination, so one save can land rows on
+            // several sheets at once. The server buckets them by sheet again.
+            var targetSheet = row.querySelector('.in-sheet').value;
+            var list = row.querySelector('.in-list').value.trim();
+            var type = row.querySelector('.in-type').value;
+
+            // A blank row is an empty placeholder, not a mistake.
+            if (list === '' && type === '' && row.querySelector('.in-amount').value.trim() === '') {
+              clearInvalid(row);
+              return;
+            }
+
+            var label = 'New ' + (targetSheet || 'row') +
+                (list === '' ? ' row' : ' row "' + list + '"');
+            if (targetSheet === '') changes.problems.push(label + ': no sheet selected');
+            if (list === '') changes.problems.push(label + ': description is empty');
+            if (type === '') changes.problems.push(label + ': no type selected');
+
+            var values = readRow(row, false);
+            validateRow(row, values, label, changes.problems);
+            // A new row has no loaded state, so ticking it is always "now".
+            tallyPayment(changes, values.amount, values.isPaid, false);
+
+            changes.additions.push({
+              sheet: targetSheet,
+              list: list,
+              type: type,
+              amount: values.amount,
+              channel: values.channel,
+              isCicilan: values.isCicilan,
+              remainingMonth: values.remainingMonth,
+              isPaid: values.isPaid
+            });
+          });
+
+          return changes;
+        }
+
+        /** Reads the editable cells of one row. No validation, no side effects. */
+        function readRow(row, isIncome) {
+          var amount = parseAmount(row.querySelector('.in-amount').value);
+          if (isIncome) {
+            return { amount: amount, channel: '', isCicilan: false, remainingMonth: '', isPaid: false };
+          }
+
+          var isCicilan = row.querySelector('.in-cicilan').checked;
+          return {
+            amount: amount,
+            channel: row.querySelector('.in-channel').value,
+            isCicilan: isCicilan,
+            remainingMonth: isCicilan ? row.querySelector('.in-remaining').value.trim() : '',
+            isPaid: row.querySelector('.in-paid').checked
+          };
+        }
+
+        /** Compares a row against the values it was loaded with. */
+        function hasRowChanged(row, values) {
+          return String(values.amount) !== row.getAttribute('data-amount') ||
+              values.channel !== row.getAttribute('data-channel') ||
+              (values.isCicilan ? '1' : '0') !== row.getAttribute('data-cicilan') ||
+              values.remainingMonth !== row.getAttribute('data-remaining') ||
+              (values.isPaid ? '1' : '0') !== row.getAttribute('data-paid');
+        }
+
+        /** Marks the offending fields and records why, for the status pill. */
+        function validateRow(row, values, label, problems) {
+          var amountField = row.querySelector('.in-amount');
+          var badAmount = isNaN(values.amount) || values.amount <= 0;
+          amountField.classList.toggle('is-invalid', badAmount);
+          if (badAmount) problems.push(label + ': amount must be greater than zero');
+
+          var remainingField = row.querySelector('.in-remaining');
+          if (!remainingField) return;
+
+          var badRemaining = false;
+          if (values.isCicilan) {
+            var parsed = parseInt(values.remainingMonth, 10);
+            badRemaining = isNaN(parsed) || parsed <= 0 ||
+                String(parsed) !== values.remainingMonth;
+            if (badRemaining) {
+              problems.push(label + ': payments remaining must be a whole number above zero');
+            }
+          }
+          remainingField.classList.toggle('is-invalid', badRemaining);
+        }
+
+        function clearInvalid(row) {
+          toArray(row.querySelectorAll('.is-invalid')).forEach(function (field) {
+            field.classList.remove('is-invalid');
+          });
+        }
+
+        function recalculate() {
+          var changes = collectChanges();
+          var total = changes.updates.length + changes.deletions.length + changes.additions.length;
+
+          setCounts(changes.additions.length, changes.updates.length,
+              changes.deletions.length);
+          setText(dom.statPaidNow, 'IDR ' + formatDigits(changes.paidNow));
+          setText(dom.statUnpaid, 'IDR ' + formatDigits(changes.unpaid));
+          setText(dom.countExisting, String(state.entries.length));
+          setText(dom.countAdd, String(changes.additions.length));
+
+          var message;
+          if (changes.problems.length) {
+            message = changes.problems.length === 1
+                ? '1 field needs attention'
+                : changes.problems.length + ' fields need attention';
+          } else if (total === 0) {
+            message = 'Nothing to save yet';
+          } else {
+            message = 'Ready to save ' + total + (total === 1 ? ' change' : ' changes');
+          }
+
+          setText(dom.statusPill, message);
+          dom.statusPill.classList.toggle('is-error', changes.problems.length > 0);
+          dom.statusPill.classList.toggle('is-ready', !changes.problems.length && total > 0);
+          dom.saveBtn.disabled = isSaving || changes.problems.length > 0 || total === 0;
+
+          return changes;
+        }
+
+        /* ---------------- submit ---------------- */
+
+        function save() {
+          if (isSaving || dom.saveBtn.disabled) return;
+
+          var changes = recalculate();
+          if (changes.problems.length) {
+            showAlert(changes.problems[0]);
+            return;
+          }
+
+          clearAlert();
+          setSaving(true);
+
+          google.script.run
+              .withSuccessHandler(onSaved)
+              .withFailureHandler(function (error) {
+                setSaving(false);
+                showAlert('Could not save: ' + messageOf(error));
+              })
+              .applyMonthlyDataChanges({
+                month: dom.monthPicker.value,
+                updates: changes.updates,
+                deletions: changes.deletions,
+                additions: changes.additions
+              });
+        }
+
+        function onSaved(result) {
+          setSaving(false);
+
+          if (!result || !result.success) {
+            showAlert('Could not save: ' + ((result && result.error) || 'unknown error'));
+            return;
+          }
+          if (result.skipped && result.skipped.length) {
+            showAlert('Skipped ' + result.skipped.length + ' row(s) that changed in the sheet: ' +
+                result.skipped.join('; '));
+          }
+
+          // An autodeduct change moves that person's Expense Jajan row, which
+          // the user never sees happen — so say so rather than leaving it silent.
+          var summary = 'Updated ' + result.updated + ' · deleted ' + result.deleted +
+              ' · added ' + result.added;
+          if (result.jajanAdjusted && result.jajanAdjusted.length) {
+            summary += ' · jajan ' + result.jajanAdjusted.join(', ');
+          }
+          toast(summary);
+
+          dom.addRowsContainer.innerHTML = '';
+          addRowSeq = 0;
+          load();
+        }
+
+        function setSaving(saving) {
+          isSaving = saving;
+          dom.saveBtn.disabled = saving;
+          setText(dom.saveBtn, saving ? 'Saving' + ELLIPSIS : 'Save Changes');
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        margin: 0;
+        padding: 16px;
+        color: #1e293b;
+        background-color: #f8fafc;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .header-section h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+      }
+
+      .badge-group { display: flex; gap: 6px; }
+
+      .badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 9999px;
+      }
+
+      .badge-paid {
+        background-color: #eff6ff;
+        color: #2563eb;
+        border: 1px solid #bfdbfe;
+      }
+
+      .badge-cancelled {
+        background-color: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+      }
+
+      .warning-banner {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        background-color: #fffbeb;
+        border: 1px solid #fde68a;
+        color: #92400e;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        line-height: 1.45;
+        margin-bottom: 12px;
+      }
+
+      .table-container {
+        flex: 1;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background-color: #ffffff;
+        margin-bottom: 12px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.85rem;
+      }
+
+      thead {
+        position: sticky;
+        top: 0;
+        background-color: #f1f5f9;
+        z-index: 10;
+      }
+
+      th {
+        padding: 10px 12px;
+        font-weight: 600;
+        color: #475569;
+        border-bottom: 1px solid #cbd5e1;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+      }
+
+      td {
+        padding: 9px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        vertical-align: middle;
+      }
+
+      tbody tr:hover { background-color: #f8fafc; }
+
+      tbody tr.excluded td { opacity: 0.4; text-decoration: line-through; }
+      tbody tr.excluded td.cell-keep { opacity: 1; text-decoration: none; }
+
+      input[type="checkbox"] { cursor: pointer; width: 15px; height: 15px; }
+
+      .row-badge {
+        font-family: monospace;
+        background-color: #f1f5f9;
+        color: #475569;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.8rem;
+      }
+
+      .reason-pill {
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        padding: 2px 7px;
+        border-radius: 9999px;
+        margin-right: 4px;
+        text-transform: uppercase;
+      }
+
+      .reason-paid { background-color: #dbeafe; color: #1d4ed8; }
+      .reason-cancelled { background-color: #fee2e2; color: #b91c1c; }
+
+      .card-num { font-family: monospace; letter-spacing: -0.02em; color: #64748b; }
+
+      .desc-text {
+        font-weight: 500;
+        color: #0f172a;
+        max-width: 240px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .amount-text { text-align: right; font-weight: 600; color: #334155; }
+
+      .summary-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 14px;
+        font-size: 0.9rem;
+      }
+
+      .total-label { font-weight: 600; color: #475569; }
+      .total-amount { font-size: 1.05rem; font-weight: 700; color: #0f172a; }
+
+      .actions-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .actions-right { display: flex; gap: 12px; }
+
+      .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .btn-secondary {
+        background-color: #ffffff;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+      }
+
+      .btn-secondary:hover { background-color: #f1f5f9; color: #1e293b; }
+
+      .btn-link {
+        background: none;
+        border: none;
+        color: #2563eb;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .btn-link:hover { text-decoration: underline; }
+
+      .btn-danger {
+        background-color: #dc2626;
+        color: #ffffff;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-danger:hover { background-color: #b91c1c; }
+      .btn-danger:disabled { background-color: #fca5a5; cursor: not-allowed; }
+
+      #loadingState, #resultState {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        gap: 14px;
+        text-align: center;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e2e8f0;
+        border-top: 4px solid #dc2626;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .result-icon { font-size: 2rem; }
+      .result-title { font-weight: 700; font-size: 1rem; color: #0f172a; }
+      .result-note { font-size: 0.85rem; color: #64748b; max-width: 420px; line-height: 1.5; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div id="contentState" style="display: flex; flex-direction: column; height: 100%;">
+        <div class="header-section">
+          <h2>🗑️ Rows to Delete</h2>
+          <div class="badge-group" id="badgeGroup"></div>
+        </div>
+
+        <div class="warning-banner">
+          <span>⚠️</span>
+          <span>
+            These entire rows will be removed from the sheet and everything below
+            will shift up — this is not the same as clearing the cells, and the
+            script cannot undo it. Untick anything you want to keep.
+          </span>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 42px;">
+                  <input type="checkbox" id="selectAll" checked title="Select all"
+                         onchange="setAll(this.checked)">
+                </th>
+                <th style="width: 62px;">Row #</th>
+                <th style="width: 108px;">Reason</th>
+                <th>Description</th>
+                <th style="text-align: right; width: 130px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="itemsTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="summary-footer">
+          <span class="total-label" id="selectionLabel">0 row(s) selected</span>
+          <span class="total-amount" id="grandTotalText">Rp 0</span>
+        </div>
+
+        <div class="actions-container">
+          <button class="btn-link" id="btnToggleAll" onclick="toggleAll()">Unselect all</button>
+          <div class="actions-right">
+            <button class="btn btn-secondary" onclick="google.script.host.close()">Cancel</button>
+            <button class="btn btn-danger" id="btnDelete" onclick="onConfirmDelete()">
+              <span id="btnDeleteLabel">Delete Rows</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="loadingState">
+        <div class="spinner"></div>
+        <div class="result-title">Deleting rows…</div>
+        <div class="result-note">Leave this dialog open until it finishes.</div>
+      </div>
+
+      <div id="resultState">
+        <div class="result-icon" id="resultIcon">✅</div>
+        <div class="result-title" id="resultTitle"></div>
+        <div class="result-note" id="resultNote"></div>
+        <button class="btn btn-secondary" onclick="google.script.host.close()">Close</button>
+      </div>
+    </div>
+
+    <script>
+      // Candidate rows found by runDeleteCheckedRows, injected as an escaped literal.
+      var RAW_ITEMS = <?!= itemsLiteral ?>;
+
+      var items = [];
+      var excluded = {}; // index -> true for rows the user chose to keep
+
+      function byId(id) { return document.getElementById(id); }
+
+      function formatRupiah(num) {
+        if (typeof num !== 'number' || isNaN(num)) return 'Rp 0';
+        return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+      }
+
+      function reasonPill(reason) {
+        var span = document.createElement('span');
+        span.className = 'reason-pill ' +
+            (reason === 'Cancelled' ? 'reason-cancelled' : 'reason-paid');
+        span.textContent = reason;
+        return span;
+      }
+
+      function buildRow(item, index) {
+        var tr = document.createElement('tr');
+        tr.id = 'row-' + index;
+
+        var tdPick = document.createElement('td');
+        tdPick.className = 'cell-keep';
+        var pick = document.createElement('input');
+        pick.type = 'checkbox';
+        pick.checked = true;
+        pick.title = 'Untick to keep this row';
+        pick.onchange = function () {
+          if (pick.checked) { delete excluded[index]; } else { excluded[index] = true; }
+          tr.className = pick.checked ? '' : 'excluded';
+          refreshSummary();
+        };
+        tdPick.appendChild(pick);
+        tr.appendChild(tdPick);
+
+        var tdRow = document.createElement('td');
+        var rowBadge = document.createElement('span');
+        rowBadge.className = 'row-badge';
+        rowBadge.textContent = '#' + item.rowIndex;
+        tdRow.appendChild(rowBadge);
+        tr.appendChild(tdRow);
+
+        var tdReason = document.createElement('td');
+        (item.reasons || []).forEach(function (reason) {
+          tdReason.appendChild(reasonPill(reason));
+        });
+        tr.appendChild(tdReason);
+
+        var tdDesc = document.createElement('td');
+        tdDesc.className = 'desc-text';
+        tdDesc.textContent = item.description || '-';
+        tdDesc.title = (item.description || '') +
+            (item.cardNumber && item.cardNumber !== 'N/A' ? '  •  Card ' + item.cardNumber : '');
+        tr.appendChild(tdDesc);
+
+        var tdAmount = document.createElement('td');
+        tdAmount.className = 'amount-text';
+        tdAmount.textContent = formatRupiah(item.amount);
+        tr.appendChild(tdAmount);
+
+        return tr;
+      }
+
+      function selectedItems() {
+        return items.filter(function (item, index) { return !excluded[index]; });
+      }
+
+      function refreshSummary() {
+        var picked = selectedItems();
+        var total = picked.reduce(function (sum, item) {
+          return sum + (typeof item.amount === 'number' && !isNaN(item.amount) ? item.amount : 0);
+        }, 0);
+
+        byId('selectionLabel').textContent = picked.length + ' of ' + items.length + ' row(s) selected';
+        byId('grandTotalText').textContent = formatRupiah(total);
+        byId('btnDeleteLabel').textContent = picked.length === 0 ? 'Delete Rows'
+            : (picked.length === 1 ? 'Delete 1 Row' : 'Delete ' + picked.length + ' Rows');
+        byId('btnDelete').disabled = picked.length === 0;
+        byId('selectAll').checked = picked.length === items.length;
+        byId('btnToggleAll').textContent = picked.length === items.length ? 'Unselect all' : 'Select all';
+      }
+
+      function setAll(checked) {
+        items.forEach(function (item, index) {
+          if (checked) { delete excluded[index]; } else { excluded[index] = true; }
+          var tr = byId('row-' + index);
+          if (tr) {
+            tr.className = checked ? '' : 'excluded';
+            tr.querySelector('input[type="checkbox"]').checked = checked;
+          }
+        });
+        refreshSummary();
+      }
+
+      function toggleAll() {
+        setAll(selectedItems().length !== items.length);
+      }
+
+      function renderBadges() {
+        var counts = {};
+        items.forEach(function (item) {
+          (item.reasons || []).forEach(function (reason) {
+            counts[reason] = (counts[reason] || 0) + 1;
+          });
+        });
+
+        var group = byId('badgeGroup');
+        group.innerHTML = '';
+        Object.keys(counts).forEach(function (reason) {
+          var badge = document.createElement('span');
+          badge.className = 'badge ' +
+              (reason === 'Cancelled' ? 'badge-cancelled' : 'badge-paid');
+          badge.textContent = counts[reason] + ' ' + reason;
+          group.appendChild(badge);
+        });
+      }
+
+      function showResult(icon, title, note) {
+        byId('contentState').style.display = 'none';
+        byId('loadingState').style.display = 'none';
+        byId('resultIcon').textContent = icon;
+        byId('resultTitle').textContent = title;
+        byId('resultNote').textContent = note;
+        byId('resultState').style.display = 'flex';
+      }
+
+      function onConfirmDelete() {
+        var picked = selectedItems();
+        if (!picked.length) return;
+
+        byId('btnDelete').disabled = true;
+        byId('contentState').style.display = 'none';
+        byId('loadingState').style.display = 'flex';
+
+        google.script.run
+          .withSuccessHandler(function (result) {
+            console.log('Deletion result:', result);
+            if (!result || !result.success) {
+              showResult('⚠️', 'Deletion failed',
+                  (result && result.error) ? result.error : 'Unknown error. Check the Apps Script logs.');
+              return;
+            }
+            var note = result.stale
+                ? result.stale + ' row(s) changed while this dialog was open and were left untouched.'
+                : 'The sheet has been updated.';
+            showResult('✅', 'Deleted ' + result.deleted + ' row(s)', note);
+          })
+          .withFailureHandler(function (error) {
+            console.error('Deletion error:', error);
+            showResult('⚠️', 'Deletion failed', (error && error.message) ? error.message : String(error));
+          })
+          .deleteConfirmedRows(picked);
+      }
+
+      window.onload = function () {
+        try {
+          items = RAW_ITEMS ? JSON.parse(RAW_ITEMS) : [];
+        } catch (e) {
+          console.error('Could not read the candidate rows:', e);
+          items = [];
+        }
+
+        var tbody = byId('itemsTableBody');
+        tbody.innerHTML = '';
+        items.forEach(function (item, index) { tbody.appendChild(buildRow(item, index)); });
+
+        renderBadges();
+        refreshSummary();
+      };
+    </script>
+  </body>
+</html>

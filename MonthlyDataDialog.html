@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #f1f5f9;
+        --surface: #ffffff;
+        --surface-2: #f8fafc;
+        --border: #e2e8f0;
+        --border-strong: #cbd5e1;
+        --text: #0f172a;
+        --text-soft: #475569;
+        --muted: #64748b;
+        --subtle: #94a3b8;
+        --brand: #2563eb;
+        --brand-dark: #1d4ed8;
+        --brand-soft: #eff6ff;
+        --brand-border: #bfdbfe;
+        --ok: #059669;
+        --ok-soft: #ecfdf5;
+        --ok-border: #a7f3d0;
+        --danger: #dc2626;
+        --danger-soft: #fef2f2;
+        --danger-border: #fecaca;
+        --radius: 12px;
+        --radius-sm: 8px;
+        --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+        --shadow-lg: 0 1px 2px rgba(15, 23, 42, .06), 0 10px 24px -16px rgba(15, 23, 42, .35);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { height: 100%; }
+
+      body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .app { display: flex; flex-direction: column; height: 100%; }
+
+      .sr-only {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+      }
+
+      .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+      /* ---------- Top bar ---------- */
+      .topbar {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        padding: 12px 18px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        z-index: 2;
+      }
+      .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+      .topbar-sub { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+      .topbar-period { display: flex; gap: 8px; flex: 0 0 auto; }
+      .topbar-period select { width: auto; min-width: 118px; padding: 7px 10px; font-size: 13px; font-weight: 600; }
+      .topbar-period select#targetYear { min-width: 84px; }
+
+      /* ---------- Scroll area ---------- */
+      .content { flex: 1 1 auto; overflow-y: auto; padding: 14px 18px 18px; }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        padding: 14px 16px;
+        margin-bottom: 14px;
+      }
+      .card-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        margin-bottom: 12px;
+      }
+      .card-title {
+        margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .04em;
+        text-transform: uppercase; color: var(--text-soft);
+      }
+      .card-note { font-size: 11.5px; color: var(--subtle); font-weight: 500; }
+
+      /* ---------- Forms ---------- */
+      label { display: block; font-weight: 600; font-size: 11.5px; color: var(--text-soft); }
+      select, input[type="text"], input[type="number"] {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-sm);
+        font-family: inherit;
+        font-size: 13px;
+        color: var(--text);
+        background: var(--surface);
+        transition: border-color .15s ease, box-shadow .15s ease;
+      }
+      select:focus, input:focus {
+        outline: none;
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+      }
+      input.is-invalid { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, .12); }
+
+      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+      .subpanel {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 12px;
+      }
+      .subpanel-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+        color: var(--muted); margin-bottom: 10px;
+      }
+
+      /* ---------- Income ---------- */
+      .income-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        margin-bottom: 6px;
+      }
+      .income-row span { font-size: 12.5px; color: var(--text-soft); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .income-row input { width: 132px; flex: 0 0 auto; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+      .total-line {
+        display: flex; justify-content: space-between; align-items: baseline;
+        margin-top: 10px; padding-top: 8px;
+        border-top: 1px dashed var(--border-strong);
+        font-size: 12px; font-weight: 600; color: var(--muted);
+      }
+      .total-line b { font-size: 14px; font-weight: 700; color: var(--text); }
+
+      /* ---------- Jajan ---------- */
+      .pool-box {
+        background: var(--brand-soft);
+        border: 1px solid var(--brand-border);
+        border-radius: var(--radius-sm);
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      .chip-set { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: var(--surface); border: 1px solid var(--border-strong);
+        border-radius: 999px; padding: 3px 9px 3px 7px;
+        font-size: 11.5px; font-weight: 500; color: var(--text-soft);
+        cursor: pointer; transition: all .15s ease;
+      }
+      .chip:hover { border-color: var(--brand); }
+      .chip input { accent-color: var(--brand); width: 13px; height: 13px; margin: 0; cursor: pointer; }
+      .chip.is-on { background: var(--surface); border-color: var(--brand); color: var(--brand-dark); font-weight: 600; }
+
+      .pool-divider { height: 1px; background: var(--brand-border); margin: 10px 0; }
+
+      /* A display rule beats the hidden attribute, and the carry lines are
+         toggled with el.hidden — so hidden has to win explicitly. */
+      [hidden] { display: none !important; }
+
+      .pill.is-warn { border-color: var(--warn-border, #fcd34d); background: #fffbeb; color: #92400e; }
+
+      .kv-line {
+        display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+        font-size: 12px; color: var(--text-soft);
+      }
+      .kv-line + .kv-line { margin-top: 5px; }
+      .kv-line b { font-size: 13px; color: var(--text); }
+      .kv-line.is-accent b { color: var(--brand-dark); font-size: 14px; }
+      .kv-line.is-net b { color: var(--ok); font-size: 14px; }
+
+      .rate-field { display: flex; align-items: center; gap: 6px; }
+      .rate-field input { width: 78px; text-align: right; font-weight: 700; font-size: 14px; }
+      .rate-field span { font-weight: 700; color: var(--muted); }
+
+      .stack { margin-top: 9px; }
+      .stack > label { margin-bottom: 4px; }
+
+      /* ---------- Tabs ---------- */
+      .tab-strip {
+        display: flex; gap: 4px; padding: 3px;
+        background: var(--surface-2); border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      .tab {
+        display: inline-flex; align-items: center; gap: 6px;
+        border: 0; background: transparent; cursor: pointer;
+        padding: 6px 10px; border-radius: 7px;
+        font-family: inherit; font-size: 12px; font-weight: 600; color: var(--muted);
+        transition: background .15s ease, color .15s ease;
+      }
+      .tab:hover { color: var(--text); }
+      .tab.is-active { background: var(--surface); color: var(--brand-dark); box-shadow: var(--shadow-sm); }
+      .tab-count {
+        font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px;
+        background: var(--border); color: var(--text-soft); font-variant-numeric: tabular-nums;
+      }
+      .tab.is-active .tab-count { background: var(--brand-soft); color: var(--brand-dark); }
+
+      .panel { display: none; }
+      .panel.is-active { display: block; }
+
+      /* ---------- Target-month tab ---------- */
+      .tgt-group + .tgt-group { margin-top: 12px; }
+      .tgt-group-head {
+        display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+        padding-bottom: 5px; margin-bottom: 4px; border-bottom: 1px solid var(--border);
+      }
+      .tgt-group-name {
+        font-size: 10px; font-weight: 700; letter-spacing: .05em;
+        text-transform: uppercase; color: var(--subtle);
+      }
+      .tgt-row {
+        display: flex; align-items: center; gap: 9px;
+        padding: 6px 8px; border-radius: 6px;
+        transition: background .12s ease, opacity .12s ease;
+      }
+      .tgt-row:hover { background: var(--surface-2); }
+      .tgt-row.is-rolled { background: #ecfdf5; }
+      .tgt-row.is-edited { background: var(--brand-soft); }
+      .tgt-row.is-doomed { background: var(--danger-soft); opacity: .55; }
+      .tgt-row.is-doomed .tgt-amount { text-decoration: line-through; }
+      .tgt-body { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+      .tgt-name { font-size: 12.5px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .tgt-meta { font-size: 11px; color: var(--subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      /* Qualified with `input` for the same reason as .check-override: the base
+         input[type="text"] rule would otherwise stretch it to the full row. */
+      .tgt-row input.tgt-amount {
+        flex: 0 0 auto; width: 118px;
+        padding: 5px 8px; text-align: right;
+        font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+      }
+      .tgt-row input.tgt-amount.is-invalid { border-color: var(--danger); }
+      .tgt-del { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--subtle); }
+      .tgt-del input { accent-color: var(--danger); width: 14px; height: 14px; margin: 0; cursor: pointer; }
+      .tgt-row.is-overlapped { box-shadow: inset 2px 0 0 var(--brand); }
+      .tgt-flag {
+        flex: 0 0 auto; padding: 1px 6px; border-radius: 999px;
+        background: var(--brand-soft); color: var(--brand-dark);
+        font-size: 9.5px; font-weight: 700; letter-spacing: .02em; white-space: nowrap;
+      }
+      .tgt-flag.is-warn { background: var(--danger-soft); color: #b91c1c; }
+
+      .tgt-locked { flex: 0 0 auto; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--subtle); }
+
+      .tgt-add-row { display: flex; align-items: flex-end; gap: 8px; margin-top: 4px; }
+      .tgt-add-row .field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+      .tgt-add-row .field > span {
+        height: 13px; line-height: 13px;
+        font-size: 9.5px; font-weight: 700; letter-spacing: .05em;
+        text-transform: uppercase; color: var(--subtle);
+      }
+      .tgt-add-sheet { flex: 0 0 150px; }
+      .tgt-add-list { flex: 1 1 auto; }
+      .tgt-add-type { flex: 0 0 150px; }
+      .tgt-add-amount { flex: 0 0 118px; }
+      .tgt-add-row .icon-btn { flex: 0 0 auto; margin-bottom: 3px; }
+
+      .list-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        margin-bottom: 7px;
+      }
+      .link {
+        border: 0; background: none; padding: 0; cursor: pointer;
+        font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--brand);
+      }
+      .link:hover { text-decoration: underline; }
+      .link.is-muted { color: var(--muted); }
+      .list-actions { display: flex; align-items: center; gap: 7px; color: var(--border-strong); font-size: 11px; }
+      .list-total { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+      .list-total b { font-size: 13px; color: var(--text); }
+
+      .card-hint { font-size: 11.5px; color: var(--subtle); margin: -2px 0 11px; }
+
+      .check-list {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        overflow-y: auto;
+        padding: 4px;
+      }
+      .check-list.is-tall { height: 216px; }
+      .check-list.is-short { height: 132px; }
+
+      .check-row {
+        display: flex; align-items: center; gap: 9px;
+        padding: 6px 8px; border-radius: 6px; cursor: pointer;
+        font-weight: 400;
+        transition: background .12s ease;
+      }
+      .check-row:hover { background: var(--surface-2); }
+      /* Scoped to the tick box on purpose: a bare `.check-row input` also matches
+         the override field and, being more specific, squashes it to 15px. */
+      .check-row input[type="checkbox"] { accent-color: var(--brand); width: 15px; height: 15px; margin: 0; flex: 0 0 auto; cursor: pointer; }
+      .check-body { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+      .check-name { font-size: 12.5px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .check-meta { font-size: 11px; color: var(--subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .check-amount { font-size: 12.5px; font-weight: 700; color: var(--text-soft); font-variant-numeric: tabular-nums; white-space: nowrap; flex: 0 0 auto; }
+      .check-amount.is-replaced { text-decoration: line-through; color: var(--subtle); font-weight: 500; }
+
+      /* Per-row rollover amount override — empty means "keep the M-1 amount".
+         Qualified with `input` so it outranks the base `input[type="text"]`
+         rule above, which would otherwise stretch it to width:100%. */
+      .check-row input.check-override {
+        flex: 0 0 auto; width: 104px;
+        padding: 5px 8px; cursor: text;
+        font-size: 12px; font-weight: 600; text-align: right;
+        font-variant-numeric: tabular-nums;
+        border-color: var(--brand-border); background: var(--brand-soft);
+      }
+      .check-override::placeholder { font-weight: 500; color: var(--subtle); font-style: italic; }
+      .check-row input.check-override.is-set { border-color: var(--brand); color: var(--brand-dark); background: #dbeafe; }
+      .badge {
+        flex: 0 0 auto;
+        background: #e0e7ff; color: #4338ca;
+        font-size: 10px; font-weight: 700; letter-spacing: .02em;
+        padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+      }
+      .badge.badge-rolled { background: #d1fae5; color: #047857; }
+      .badge.badge-changed { background: #fef3c7; color: #b45309; }
+
+      .empty, .loading {
+        padding: 14px 8px; text-align: center;
+        font-size: 11.5px; color: var(--subtle); font-style: italic;
+      }
+
+      .net-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: var(--ok-soft); border: 1px solid var(--ok-border);
+        border-radius: 999px; padding: 3px 10px;
+      }
+      .net-badge span { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #166534; }
+      .net-badge b { font-size: 13px; font-weight: 700; color: #15803d; font-variant-numeric: tabular-nums; }
+
+      /* ---------- Alert ---------- */
+      .alert {
+        display: none;
+        background: var(--danger-soft); border: 1px solid var(--danger-border);
+        color: #991b1b; border-radius: var(--radius-sm);
+        padding: 10px 12px; margin-bottom: 12px; font-size: 12px; font-weight: 500;
+      }
+      .alert.is-shown { display: block; }
+
+      /* ---------- Action bar ---------- */
+      .actionbar {
+        flex: 0 0 auto;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        padding: 10px 18px 12px;
+        box-shadow: 0 -6px 18px -16px rgba(15, 23, 42, .6);
+      }
+      .stat-strip { display: flex; gap: 8px; margin-bottom: 9px; }
+      .stat {
+        flex: 1 1 0; min-width: 0;
+        background: var(--surface-2); border: 1px solid var(--border);
+        border-radius: var(--radius-sm); padding: 6px 10px;
+      }
+      .stat span { display: block; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--subtle); }
+      .stat b { display: block; font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .stat b.is-negative { color: var(--danger); }
+
+      .cta-row { display: flex; align-items: center; gap: 12px; }
+      .pill {
+        flex: 1 1 auto; min-width: 0;
+        font-size: 11.5px; font-weight: 600;
+        padding: 7px 11px; border-radius: 999px;
+        border: 1px solid var(--ok-border); background: var(--ok-soft); color: #166534;
+      }
+      .pill.is-error { border-color: var(--danger-border); background: var(--danger-soft); color: #991b1b; }
+
+      .btn {
+        flex: 0 0 auto;
+        border: 0; cursor: pointer;
+        font-family: inherit; font-size: 14px; font-weight: 700;
+        padding: 11px 26px; border-radius: 10px;
+        color: #fff;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        box-shadow: 0 4px 10px -3px rgba(37, 99, 235, .45);
+        transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+      }
+      .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 16px -4px rgba(37, 99, 235, .5); }
+      .btn:active:not(:disabled) { transform: translateY(0); }
+      .btn:disabled { background: var(--border-strong); color: #f8fafc; box-shadow: none; cursor: not-allowed; }
+
+      ::-webkit-scrollbar { width: 9px; height: 9px; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; border: 2px solid var(--bg); }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      ::-webkit-scrollbar-track { background: transparent; }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+
+      <header class="topbar">
+        <div>
+          <div class="topbar-title">Generate Monthly Data</div>
+          <div class="topbar-sub" id="periodSummary">Loading period&hellip;</div>
+        </div>
+        <div class="topbar-period">
+          <label class="sr-only" for="targetMonth">Target month</label>
+          <select id="targetMonth"></select>
+          <label class="sr-only" for="targetYear">Target year</label>
+          <select id="targetYear"></select>
+        </div>
+      </header>
+
+      <main class="content" id="content">
+
+        <div class="alert" id="alertBanner" role="alert"></div>
+
+        <!-- TOP-LEVEL TABS -->
+        <div class="tab-strip" id="topTabStrip" role="tablist" style="margin-bottom:12px;">
+          <button type="button" class="tab is-active" role="tab" data-panel="panelRollover">Rollover from M-1</button>
+          <button type="button" class="tab" role="tab" data-panel="panelTargetMonth">Already in target month
+            <span class="tab-count" id="countTargetRows">0</span></button>
+        </div>
+
+        <div class="panel is-active" id="panelRollover">
+
+        <!-- INCOME -->
+        <section class="card">
+          <div class="card-head">
+            <h2 class="card-title">Income</h2>
+            <div class="card-note" id="incomeNote">Categories from Master A3:A</div>
+          </div>
+          <div class="grid-2">
+            <div class="subpanel">
+              <div class="subpanel-head">Wiva</div>
+              <div id="wivaIncomeContainer"></div>
+              <div class="total-line"><span>Total</span><b id="wivaIncomeTotal" class="num">IDR 0</b></div>
+            </div>
+            <div class="subpanel">
+              <div class="subpanel-head">Jane</div>
+              <div id="janeIncomeContainer"></div>
+              <div class="total-line"><span>Total</span><b id="janeIncomeTotal" class="num">IDR 0</b></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- JAJAN ALLOCATION -->
+        <section class="card">
+          <div class="card-head">
+            <h2 class="card-title">Jajan Allocation Pool</h2>
+            <div class="card-note">Written to Expense as one row per person</div>
+          </div>
+
+          <div class="pool-box">
+            <div class="grid-2">
+              <div>
+                <label>Wiva&rsquo;s income categories</label>
+                <div class="chip-set" id="wivaJajanCategoriesContainer"></div>
+              </div>
+              <div>
+                <label>Jane&rsquo;s income categories</label>
+                <div class="chip-set" id="janeJajanCategoriesContainer"></div>
+              </div>
+            </div>
+
+            <div class="pool-divider"></div>
+
+            <div class="kv-line"><span>Combined income base</span><b id="combinedSalaryDisplay" class="num">IDR 0</b></div>
+            <div class="kv-line" style="margin-top:9px;">
+              <label for="jajanPoolRate" style="margin:0;">Pool rate (% of income base)</label>
+              <span class="rate-field">
+                <input type="number" id="jajanPoolRate" min="0" max="100" step="0.01" value="10">
+                <span>%</span>
+              </span>
+            </div>
+            <div class="kv-line is-accent" style="margin-top:9px;"><span>Total proportioned pool</span><b id="combinedGrossJajanDisplay" class="num">IDR 0</b></div>
+          </div>
+
+          <div class="grid-2">
+            <div class="subpanel">
+              <div class="subpanel-head">Wiva jajan</div>
+              <div class="kv-line">
+                <label for="wivaJajanRate" style="margin:0;">Split</label>
+                <span class="rate-field">
+                  <input type="number" id="wivaJajanRate" min="0" max="100" step="0.01" value="50">
+                  <span>%</span>
+                </span>
+              </div>
+              <div class="stack">
+                <label for="wivaJajanChannel">Target payment channel</label>
+                <select id="wivaJajanChannel"></select>
+              </div>
+              <div class="kv-line" style="margin-top:10px;"><span>Gross share</span><b id="wivaGrossJajanDisplay" class="num">IDR 0</b></div>
+              <div class="kv-line" id="wivaCarryLine" hidden><span>Already in target month</span><b id="wivaCarryDisplay" class="num">IDR 0</b></div>
+              <div class="kv-line is-net"><span>Net jajan</span><b id="wivaNetJajanDisplay" class="num">IDR 0</b></div>
+            </div>
+
+            <div class="subpanel">
+              <div class="subpanel-head">Jane jajan</div>
+              <div class="kv-line">
+                <label for="janeJajanRate" style="margin:0;">Split</label>
+                <span class="rate-field">
+                  <input type="number" id="janeJajanRate" min="0" max="100" step="0.01" value="50">
+                  <span>%</span>
+                </span>
+              </div>
+              <div class="stack">
+                <label for="janeJajanChannel">Target payment channel</label>
+                <select id="janeJajanChannel"></select>
+              </div>
+              <div class="kv-line" style="margin-top:10px;"><span>Gross share</span><b id="janeGrossJajanDisplay" class="num">IDR 0</b></div>
+              <div class="kv-line" id="janeCarryLine" hidden><span>Already in target month</span><b id="janeCarryDisplay" class="num">IDR 0</b></div>
+              <div class="kv-line is-net"><span>Net jajan</span><b id="janeNetJajanDisplay" class="num">IDR 0</b></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ROLLOVER CHECKLISTS -->
+        <section class="card">
+          <div class="card-head">
+            <h2 class="card-title">Rollover</h2>
+            <div class="tab-strip" id="tabStrip" role="tablist">
+              <button type="button" class="tab is-active" role="tab" data-panel="panelSaving">Saving <span class="tab-count" id="countSaving">0</span></button>
+              <button type="button" class="tab" role="tab" data-panel="panelExpense">Expense <span class="tab-count" id="countExpense">0</span></button>
+              <button type="button" class="tab" role="tab" data-panel="panelIbadah">Ibadah <span class="tab-count" id="countIbadah">0</span></button>
+              <button type="button" class="tab" role="tab" data-panel="panelAutodeduct">Autodeduct <span class="tab-count" id="countAutodeduct">0</span></button>
+            </div>
+          </div>
+
+          <p class="card-hint">
+            Every row carries its M&minus;1 amount forward. Type into the box beside an amount
+            to write a different figure into the target month &mdash; leave it blank to keep the same amount.
+          </p>
+
+          <div class="panel is-active" id="panelSaving">
+            <div class="list-head">
+              <div class="list-actions">
+                <button type="button" class="link" data-toggle="saving-chk" data-on="1">Select all</button><span>&middot;</span>
+                <button type="button" class="link is-muted" data-toggle="saving-chk" data-on="0">Clear</button>
+              </div>
+              <div class="list-total">Selected <b id="savingSelectionTotal" class="num">IDR 0</b></div>
+            </div>
+            <div id="savingContainer" class="check-list is-tall"></div>
+          </div>
+
+          <div class="panel" id="panelExpense">
+            <div class="list-head">
+              <div class="list-actions">
+                <button type="button" class="link" data-toggle="expense-chk" data-on="1">Select all</button><span>&middot;</span>
+                <button type="button" class="link is-muted" data-toggle="expense-chk" data-on="0">Clear</button>
+              </div>
+              <div class="list-total">Selected <b id="expenseSelectionTotal" class="num">IDR 0</b></div>
+            </div>
+            <div id="expenseContainer" class="check-list is-tall"></div>
+          </div>
+
+          <div class="panel" id="panelIbadah">
+            <div class="list-head">
+              <div class="list-actions">
+                <button type="button" class="link" data-toggle="ibadah-chk" data-on="1">Select all</button><span>&middot;</span>
+                <button type="button" class="link is-muted" data-toggle="ibadah-chk" data-on="0">Clear</button>
+              </div>
+              <div class="list-total">Selected <b id="ibadahSelectionTotal" class="num">IDR 0</b></div>
+            </div>
+            <div id="ibadahContainer" class="check-list is-tall"></div>
+          </div>
+
+          <div class="panel" id="panelAutodeduct">
+            <div class="subpanel" style="margin-bottom:10px;">
+              <div class="subpanel-head">
+                <span>Wiva&rsquo;s items</span>
+                <span class="net-badge"><span>Net jajan</span><b id="wivaAutodeductNetJajanDisplay">IDR 0</b></span>
+              </div>
+              <div class="list-head">
+                <div class="list-actions">
+                  <button type="button" class="link" data-toggle="wiva_auto-chk" data-on="1">Select all</button><span>&middot;</span>
+                  <button type="button" class="link is-muted" data-toggle="wiva_auto-chk" data-on="0">Clear</button>
+                </div>
+                <div class="list-total">Deductions <b id="wivaAutodeductTotal" class="num">IDR 0</b></div>
+              </div>
+              <div id="wivaAutodeductContainer" class="check-list is-short"></div>
+            </div>
+
+            <div class="subpanel">
+              <div class="subpanel-head">
+                <span>Jane&rsquo;s items</span>
+                <span class="net-badge"><span>Net jajan</span><b id="janeAutodeductNetJajanDisplay">IDR 0</b></span>
+              </div>
+              <div class="list-head">
+                <div class="list-actions">
+                  <button type="button" class="link" data-toggle="jane_auto-chk" data-on="1">Select all</button><span>&middot;</span>
+                  <button type="button" class="link is-muted" data-toggle="jane_auto-chk" data-on="0">Clear</button>
+                </div>
+                <div class="list-total">Deductions <b id="janeAutodeductTotal" class="num">IDR 0</b></div>
+              </div>
+              <div id="janeAutodeductContainer" class="check-list is-short"></div>
+            </div>
+          </div>
+        </section>
+
+        </div><!-- /panelRollover -->
+
+        <!-- ALREADY IN THE TARGET MONTH -->
+        <div class="panel" id="panelTargetMonth">
+          <section class="card">
+            <div class="card-head">
+              <h2 class="card-title">Already in <span id="targetMonthLabel">the target month</span></h2>
+              <div class="card-note" id="targetRowsNote">Nothing there yet</div>
+            </div>
+            <p class="card-hint">
+              Fix up what is already in this month before generating. Edits, removals and new rows are
+              applied <b>first</b>, so the jajan figures below already include them. Channel, Cicilan and
+              Sudah Bayar stay in the Monthly Data form &mdash; they are carried through untouched here.
+            </p>
+
+            <div id="targetRowsContainer"></div>
+
+            <div class="list-head" style="margin-top:14px;">
+              <span class="tgt-group-name">Add to this month</span>
+            </div>
+            <div id="targetAddContainer"></div>
+            <button type="button" class="btn-ghost" id="targetAddBtn">
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+              </svg>
+              Add row
+            </button>
+
+            <div class="kv-line" style="margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
+              <span>Net jajan after these edits</span>
+              <b id="targetNetJajanDisplay" class="num">IDR 0 / IDR 0</b>
+            </div>
+          </section>
+        </div>
+
+      </main>
+
+      <footer class="actionbar">
+        <div class="stat-strip">
+          <div class="stat"><span>Income</span><b id="statIncome" class="num">IDR 0</b></div>
+          <div class="stat" title="Selected Saving + Expense + Ibadah + Gross jajan pool + rows already in / added to the target month"><span>Cost</span><b id="statCost" class="num">IDR 0</b></div>
+          <div class="stat"><span>Net jajan W / J</span><b id="statNetJajan" class="num">IDR 0 / IDR 0</b></div>
+          <div class="stat" title="Income − Saving − Expense − Ibadah − Gross jajan pool"><span>Remaining</span><b id="statRemaining" class="num">IDR 0</b></div>
+        </div>
+        <div class="cta-row">
+          <div class="pill" id="validationAlertBox" aria-live="polite">Allocation split 100% &middot; ready</div>
+          <button type="button" class="btn" id="runBtn">Generate Data</button>
+        </div>
+      </footer>
+
+    </div>
+
+    <script>
+      /**
+       * The month to open on, stamped in by the server from the spreadsheet's
+       * timezone. Falls back to the browser clock if the file is ever served
+       * untemplated.
+       */
+      var DEFAULT_MONTH = <?!= defaultMonthLiteral || '""' ?>;
+    </script>
+
+    <script>
+      (function () {
+        'use strict';
+
+        var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+        var YEARS_BEHIND = 2;
+        var YEARS_AHEAD = 4;
+        var DASH = '—';
+        var ELLIPSIS = String.fromCharCode(8230);
+
+        /** Sheet holding the rows that reduce the jajan budget. */
+        var AUTODEDUCT_SHEET_NAME = 'Autodeduct Jajan';
+        /** Sheets a row can be added to on the target-month tab. */
+        var TARGET_ADD_SHEETS = ['Saving', 'Expense', 'Ibadah', 'Autodeduct Jajan'];
+        var IDR_FORMAT = new Intl.NumberFormat('id-ID');
+        var ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+        // Priority ladders used to preselect each person's default jajan channel.
+        var CHANNEL_RULES = {
+          wiva: { exact: 'bca expressi rio',
+                  fallbacks: [['expressi', 'rio'], ['bca', 'expressi'], ['rio']] },
+          jane: { exact: 'bca debit jane',
+                  fallbacks: [['debit', 'jane'], ['bca', 'debit'], ['jane']] }
+        };
+
+        var dom = {};
+        var boxes = { saving: [], expense: [], ibadah: [], wivaAuto: [], janeAuto: [] };
+        var targetRows = [];
+        var candidateIdentities = {};
+        var targetTypeOptions = {};
+        var targetAddSeq = 0;
+        var incomeFields = { wiva: [], jane: [] };
+        var categoryBoxes = { wiva: [], jane: [] };
+        var loadToken = 0;
+        var isSubmitting = false;
+
+        /* ---------------- helpers ---------------- */
+
+        function byId(id) { return document.getElementById(id); }
+
+        function escapeHtml(value) {
+          return String(value === null || value === undefined ? '' : value)
+              .replace(/[&<>"']/g, function (ch) { return ESCAPES[ch]; });
+        }
+
+        function idr(value) {
+          return 'IDR ' + IDR_FORMAT.format(Math.round(value || 0));
+        }
+
+        /** Groups a number the way the amount fields show it: 1.910.000. */
+        function formatDigits(value) {
+          return IDR_FORMAT.format(Math.round(Number(value) || 0));
+        }
+
+        function digitsOf(text) {
+          return parseInt(String(text).replace(/\D/g, ''), 10) || 0;
+        }
+
+        function rateOf(input) {
+          return parseFloat(input.value) || 0;
+        }
+
+        function normalize(text) {
+          return String(text === null || text === undefined ? '' : text).trim().toLowerCase();
+        }
+
+        function toArray(nodeList) {
+          return Array.prototype.slice.call(nodeList);
+        }
+
+        function setText(el, text) {
+          if (el && el.textContent !== text) el.textContent = text;
+        }
+
+        /** Digits typed into a row's override box, or '' when it is untouched. */
+        function overrideDigits(box) {
+          var field = box.parentNode.querySelector('.check-override');
+          return field ? field.value.replace(/\D/g, '') : '';
+        }
+
+        /** The amount a row will actually write: its override, else its M-1 amount. */
+        function amountOf(box) {
+          var digits = overrideDigits(box);
+          return digits === '' ? (parseFloat(box.dataset.amount) || 0) : parseInt(digits, 10);
+        }
+
+        /**
+         * What the target month autodeducts on top of the ticked candidates,
+         * read from the target-month tab as it stands right now — so removing a
+         * row or retyping its amount moves Net jajan immediately.
+         *
+         * A ticked candidate is about to overwrite the row of the same identity,
+         * so that row drops out instead of being counted twice. This mirrors
+         * addExistingAutodeductions_ on the server, which shifts the same match
+         * queue the merge itself uses.
+         *
+         * Rows added on this tab always carry: they are new, so no candidate
+         * loaded with this dialog can be pointing at one.
+         *
+         * @return {{Wiva: number, Jane: number}} Carried amounts per owner.
+         */
+        function carriedAutodeduct() {
+          var carried = { Wiva: 0, Jane: 0 };
+          var byIdentity = {};
+
+          targetRowStates().forEach(function (st) {
+            if (st.doomed || st.sheet !== AUTODEDUCT_SHEET_NAME) return;
+            if (!st.owner || !isFinite(st.amount) || st.amount <= 0) return;
+            (byIdentity[st.identity] = byIdentity[st.identity] || []).push(st);
+          });
+
+          boxes.wivaAuto.concat(boxes.janeAuto).forEach(function (box) {
+            if (!box.checked) return;
+            var queue = byIdentity[candidateIdentities[box.value]];
+            if (queue && queue.length) queue.shift();
+          });
+
+          Object.keys(byIdentity).forEach(function (identity) {
+            byIdentity[identity].forEach(function (st) { carried[st.owner] += st.amount; });
+          });
+
+          targetAddStates().forEach(function (st) {
+            if (st.sheet !== AUTODEDUCT_SHEET_NAME || !st.owner) return;
+            if (!isFinite(st.amount) || st.amount <= 0) return;
+            carried[st.owner] += st.amount;
+          });
+
+          return carried;
+        }
+
+        /**
+         * Saving / Expense / Ibadah already in the target month, plus rows
+         * staged to be added, as they stand after the tab's edits. Skips rows
+         * marked for removal, rows a ticked candidate overwrites (already in
+         * the selected totals), Jajan rows (recalculated from the gross pool)
+         * and Autodeduct Jajan (covered by the gross pool).
+         * Call after markRolloverOverlap so the overlap flags are current.
+         *
+         * @return {number} Target-month cost on top of the rollover.
+         */
+        function targetMonthCost() {
+          function counts(sheet, type) {
+            return sheet !== AUTODEDUCT_SHEET_NAME &&
+                !(sheet === 'Expense' && normalize(type) === 'jajan');
+          }
+          var total = 0;
+          targetRowStates().forEach(function (st) {
+            if (st.doomed || st.row.classList.contains('is-overlapped')) return;
+            if (!counts(st.sheet, st.entry.type) || !isFinite(st.amount)) return;
+            total += st.amount;
+          });
+          targetAddStates().forEach(function (st) {
+            if (counts(st.sheet, st.type) && isFinite(st.amount)) total += st.amount;
+          });
+          return total;
+        }
+
+        /* ---------------- target-month tab ---------------- */
+
+        /** Reads every existing target-month row as it currently stands. */
+        function targetRowStates() {
+          return toArray(dom.targetRowsContainer.querySelectorAll('.tgt-row')).map(function (row) {
+            var entry = targetRows[parseInt(row.getAttribute('data-index'), 10)];
+            var field = row.querySelector('.tgt-amount');
+            return {
+              row: row,
+              entry: entry,
+              sheet: entry.sheet,
+              identity: entry.identity,
+              owner: entry.owner,
+              amount: digitsOf(field.value),
+              doomed: row.querySelector('.tgt-del input').checked
+            };
+          });
+        }
+
+        /** Reads the rows staged for adding to the target month. */
+        function targetAddStates() {
+          return toArray(dom.targetAddContainer.querySelectorAll('.tgt-add-row')).map(function (row) {
+            var sheet = row.querySelector('.tgt-add-sheet select').value;
+            var type = row.querySelector('.tgt-add-type select').value;
+            var amountField = row.querySelector('.tgt-add-amount input');
+            return {
+              row: row,
+              sheet: sheet,
+              list: row.querySelector('.tgt-add-list input').value.trim(),
+              type: type,
+              owner: sheet === AUTODEDUCT_SHEET_NAME ? normaliseOwner(type) : '',
+              amount: digitsOf(amountField.value),
+              raw: amountField.value.trim()
+            };
+          });
+        }
+
+        /** Client-side twin of normaliseJajanOwner_, for rows added here. */
+        function normaliseOwner(value) {
+          var who = normalize(value);
+          if (who === 'wiva' || who === 'rio') return 'Wiva';
+          if (who === 'jane') return 'Jane';
+          return '';
+        }
+
+        function renderTargetRows(targetMonth) {
+          setText(dom.targetMonthLabel, targetMonth || 'the target month');
+          setText(dom.countTargetRows, String(targetRows.length));
+
+          dom.targetAddContainer.innerHTML = '';
+          targetAddSeq = 0;
+
+          if (!targetRows.length) {
+            dom.targetRowsContainer.innerHTML = emptyHtml(
+                'Nothing in this month yet. Anything you add below is written before the rollover runs.');
+            setText(dom.targetRowsNote, 'Nothing there yet');
+            return;
+          }
+
+          setText(dom.targetRowsNote,
+              targetRows.length + (targetRows.length === 1 ? ' row' : ' rows'));
+
+          var groups = {};
+          var order = [];
+          targetRows.forEach(function (entry, index) {
+            if (!groups[entry.sheet]) { groups[entry.sheet] = []; order.push(entry.sheet); }
+            groups[entry.sheet].push({ entry: entry, index: index });
+          });
+
+          dom.targetRowsContainer.innerHTML = order.map(function (sheetName) {
+            var items = groups[sheetName];
+            return '<div class="tgt-group">' +
+                '<div class="tgt-group-head">' +
+                  '<span class="tgt-group-name">' + escapeHtml(sheetName) + '</span>' +
+                  '<span class="tgt-group-name">' + items.length +
+                    (items.length === 1 ? ' row' : ' rows') + '</span>' +
+                '</div>' +
+                items.map(targetRowHtml).join('') +
+                '</div>';
+          }).join('');
+        }
+
+        function targetRowHtml(item) {
+          var entry = item.entry;
+          var meta = [];
+          if (entry.type && entry.type !== DASH) meta.push(entry.type);
+          if (entry.channel && String(entry.channel).trim() !== '') meta.push(entry.channel);
+
+          // Installments are flagged so a row being edited here is recognisable
+          // as one. The remaining count is never touched: it travels back to the
+          // server exactly as it arrived.
+          var badge = entry.isCicilan
+              ? '<span class="badge">cicilan &middot; ' + escapeHtml(entry.remainingMonth) + ' left</span>'
+              : '';
+
+          // Rows an M-1 candidate already covers are marked so you can tell them
+          // from rows added by hand; they no longer appear on the rollover tab.
+          var rolled = entry.fromRollover
+              ? '<span class="badge badge-rolled" title="Already in this month from the rollover. ' +
+                'Delete it here to have it offered on the rollover tab again.">from rollover</span>'
+              : '';
+
+          // A rolled-over row whose amount has since moved says what it was.
+          if (entry.fromRollover &&
+              Math.round(entry.amount) !== Math.round(entry.rolloverAmount)) {
+            rolled += '<span class="badge badge-changed" title="Amount differs from the M-1 figure">' +
+                'changed from ' + escapeHtml(idr(entry.rolloverAmount)) + '</span>';
+          }
+
+          return '<div class="tgt-row' + (entry.fromRollover ? ' is-rolled' : '') +
+              '" data-index="' + item.index + '">' +
+              '<span class="tgt-body">' +
+                '<span class="tgt-name">' + escapeHtml(entry.list) + '</span>' +
+                (meta.length ? '<span class="tgt-meta">' + escapeHtml(meta.join(' \u00b7 ')) + '</span>' : '') +
+              '</span>' +
+              rolled +
+              badge +
+              '<span class="tgt-flag" hidden></span>' +
+              '<input type="text" class="tgt-amount" inputmode="numeric" autocomplete="off"' +
+                ' spellcheck="false" aria-label="Amount for ' + escapeHtml(entry.list) + '"' +
+                ' value="' + escapeHtml(formatDigits(entry.amount)) + '"' +
+                ' data-original="' + escapeHtml(String(Math.round(entry.amount))) + '">' +
+              '<label class="tgt-del" title="Remove this row">' +
+                '<input type="checkbox">Del</label>' +
+              '</div>';
+        }
+
+        function addTargetRow() {
+          var rowId = ++targetAddSeq;
+          var row = document.createElement('div');
+          row.className = 'tgt-add-row';
+          row.setAttribute('data-add-row', rowId);
+          row.innerHTML =
+              '<label class="field tgt-add-sheet"><span>Sheet</span>' +
+                '<select>' + targetSheetOptionsHtml() + '</select></label>' +
+              '<label class="field tgt-add-list"><span>List description</span>' +
+                '<input type="text" placeholder="e.g. Listrik" autocomplete="off"></label>' +
+              '<label class="field tgt-add-type"><span>Type</span><select></select></label>' +
+              '<label class="field tgt-add-amount"><span>Amount</span>' +
+                '<input type="text" inputmode="numeric" autocomplete="off" spellcheck="false"></label>' +
+              '<button type="button" class="icon-btn" data-remove-target-add="1" title="Remove this row">' +
+                '<svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">' +
+                  '<path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />' +
+                '</svg>' +
+              '</button>';
+
+          dom.targetAddContainer.appendChild(row);
+          fillTargetTypeSelect(row);
+          recalculate();
+        }
+
+        function targetSheetOptionsHtml() {
+          return TARGET_ADD_SHEETS.map(function (name) {
+            return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + '</option>';
+          }).join('');
+        }
+
+        /** Points one add row's Type list at the sheet that row is going to. */
+        function fillTargetTypeSelect(row) {
+          var select = row.querySelector('.tgt-add-type select');
+          var previous = select.value;
+          var sheet = row.querySelector('.tgt-add-sheet select').value;
+          var list = targetTypeOptions[sheet] || [];
+
+          select.innerHTML = '<option value="">Select' + ELLIPSIS + '</option>' +
+              list.map(function (type) {
+                return '<option value="' + escapeHtml(type) + '">' + escapeHtml(type) + '</option>';
+              }).join('');
+          if (previous && list.indexOf(previous) !== -1) select.value = previous;
+        }
+
+        /**
+         * Flags the target-month rows a ticked rollover candidate is about to
+         * write over, and reports the ones that will surprise.
+         *
+         * The rollover runs *after* these edits and upserts by List + Type +
+         * Note/Channel, so a ticked candidate matching a row here will
+         * overwrite an amount you just typed, or re-append a row you just
+         * removed. Neither duplicates anything — but both quietly undo the
+         * edit, so the row says so and the removal is called out.
+         *
+         * @param {Object} changes Result of collectTargetChanges.
+         * @return {Array<string>} Warnings about removals the rollover undoes.
+         */
+        function markRolloverOverlap(changes) {
+          var ticked = {};
+          [boxes.saving, boxes.expense, boxes.ibadah, boxes.wivaAuto, boxes.janeAuto]
+              .forEach(function (list) {
+                list.forEach(function (box) {
+                  if (box.checked) ticked[candidateIdentities[box.value]] = true;
+                });
+              });
+
+          var undone = [];
+          targetRowStates().forEach(function (st) {
+            var overlapped = !!ticked[st.identity];
+            var flag = st.row.querySelector('.tgt-flag');
+
+            st.row.classList.toggle('is-overlapped', overlapped);
+            flag.hidden = !overlapped;
+            flag.classList.toggle('is-warn', overlapped && st.doomed);
+            if (!overlapped) return;
+
+            if (st.doomed) {
+              setText(flag, 'rollover puts this back');
+              undone.push(st.entry.list);
+            } else {
+              setText(flag, 'rollover overwrites this');
+            }
+          });
+          return undone;
+        }
+
+        /**
+         * Everything staged on the target-month tab, shaped for
+         * applyMonthlyDataChanges.
+         *
+         * An update is sent only when the amount actually changed, and it
+         * carries the row's channel, Cicilan flag, payments remaining and paid
+         * state back verbatim. The server rewrites every editable column on an
+         * update, so leaving them out would clear the installment flag and its
+         * remaining count on any row whose amount was edited. Rows nobody
+         * touched send nothing at all, which also keeps a pre-existing oddity
+         * elsewhere in the month from blocking the run.
+         */
+        function collectTargetChanges() {
+          var changes = { updates: [], deletions: [], additions: [], problems: [] };
+
+          targetRowStates().forEach(function (st) {
+            st.row.classList.toggle('is-doomed', st.doomed);
+            var field = st.row.querySelector('.tgt-amount');
+
+            if (st.doomed) {
+              st.row.classList.remove('is-edited');
+              field.classList.remove('is-invalid');
+              changes.deletions.push({
+                sheet: st.sheet, rowNum: st.entry.rowNum,
+                signature: st.entry.signature, list: st.entry.list
+              });
+              return;
+            }
+
+            var isEdited = String(st.amount) !== field.getAttribute('data-original');
+            st.row.classList.toggle('is-edited', isEdited);
+
+            var isBad = isEdited && !(st.amount > 0);
+            field.classList.toggle('is-invalid', isBad);
+            if (isBad) {
+              changes.problems.push(st.sheet + ' / ' + st.entry.list +
+                  ': amount must be greater than zero');
+              return;
+            }
+            if (!isEdited) return;
+
+            changes.updates.push({
+              sheet: st.sheet,
+              rowNum: st.entry.rowNum,
+              signature: st.entry.signature,
+              list: st.entry.list,
+              amount: st.amount,
+              channel: st.entry.channel,
+              isCicilan: st.entry.isCicilan,
+              remainingMonth: st.entry.remainingMonth,
+              isPaid: st.entry.isPaid
+            });
+          });
+
+          targetAddStates().forEach(function (st) {
+            // A blank row is an empty placeholder, not a mistake.
+            if (st.list === '' && st.type === '' && st.raw === '') return;
+
+            var label = 'New ' + (st.sheet || 'row') +
+                (st.list === '' ? ' row' : ' row "' + st.list + '"');
+            if (st.list === '') changes.problems.push(label + ': description is empty');
+            if (st.type === '') changes.problems.push(label + ': no type selected');
+            if (!(st.amount > 0)) changes.problems.push(label + ': amount must be greater than zero');
+            if (st.list === '' || st.type === '' || !(st.amount > 0)) return;
+
+            changes.additions.push({
+              sheet: st.sheet, list: st.list, type: st.type, amount: st.amount,
+              channel: '', isCicilan: false, remainingMonth: '', isPaid: false
+            });
+          });
+
+          return changes;
+        }
+
+        /** Shows a carry line only when there is something to carry. */
+        function showCarry(line, display, amount) {
+          line.hidden = !(amount > 0);
+          if (amount > 0) setText(display, '- ' + idr(amount));
+        }
+
+        function sumChecked(list) {
+          var total = 0;
+          for (var i = 0; i < list.length; i++) {
+            if (list[i].checked) total += amountOf(list[i]);
+          }
+          return total;
+        }
+
+        function countChecked(list) {
+          var count = 0;
+          for (var i = 0; i < list.length; i++) if (list[i].checked) count++;
+          return count;
+        }
+
+        function showAlert(message) {
+          dom.alertBanner.textContent = message;
+          dom.alertBanner.classList.add('is-shown');
+        }
+
+        function clearAlert() {
+          dom.alertBanner.classList.remove('is-shown');
+        }
+
+        /* ---------------- boot ---------------- */
+
+        function init() {
+          cacheDom();
+          buildPeriodSelectors();
+          bindEvents();
+          loadContext();
+        }
+
+        function cacheDom() {
+          var ids = ['content', 'alertBanner', 'periodSummary', 'targetMonth', 'targetYear',
+            'wivaIncomeContainer', 'janeIncomeContainer', 'wivaIncomeTotal', 'janeIncomeTotal',
+            'incomeNote',
+            'wivaJajanCategoriesContainer', 'janeJajanCategoriesContainer',
+            'combinedSalaryDisplay', 'jajanPoolRate', 'combinedGrossJajanDisplay',
+            'wivaJajanRate', 'janeJajanRate', 'wivaJajanChannel', 'janeJajanChannel',
+            'wivaGrossJajanDisplay', 'wivaNetJajanDisplay',
+            'wivaCarryLine', 'wivaCarryDisplay', 'janeCarryLine', 'janeCarryDisplay',
+            'janeGrossJajanDisplay', 'janeNetJajanDisplay',
+            'tabStrip', 'countSaving', 'countExpense', 'countIbadah', 'countAutodeduct',
+            'countTargetRows', 'targetMonthLabel', 'targetRowsNote', 'targetRowsContainer',
+            'targetAddContainer', 'targetAddBtn', 'targetNetJajanDisplay',
+            'savingContainer', 'expenseContainer', 'ibadahContainer',
+            'savingSelectionTotal', 'expenseSelectionTotal', 'ibadahSelectionTotal',
+            'wivaAutodeductContainer', 'janeAutodeductContainer',
+            'wivaAutodeductTotal', 'janeAutodeductTotal',
+            'wivaAutodeductNetJajanDisplay', 'janeAutodeductNetJajanDisplay',
+            'statIncome', 'statCost', 'statNetJajan', 'statRemaining',
+            'validationAlertBox', 'runBtn'];
+          ids.forEach(function (id) { dom[id] = byId(id); });
+        }
+
+        function buildPeriodSelectors() {
+          var today = defaultPeriod();
+
+          dom.targetMonth.innerHTML = MONTHS.map(function (name, i) {
+            return '<option value="' + i + '">' + name + '</option>';
+          }).join('');
+
+          var years = [];
+          for (var y = today.getFullYear() - YEARS_BEHIND; y <= today.getFullYear() + YEARS_AHEAD; y++) {
+            years.push('<option value="' + y + '">' + y + '</option>');
+          }
+          dom.targetYear.innerHTML = years.join('');
+
+          // Default to the month you are in. getMonth() is already 0-based, which
+          // is what both the option values and getMonthlyInitializationPayload use.
+          dom.targetMonth.value = today.getMonth();
+          dom.targetYear.value = today.getFullYear();
+        }
+
+        /**
+         * The month to open on. The server stamps in the spreadsheet's own
+         * current month so the dialog and the ledger dates it writes can never
+         * disagree; the browser clock is only a fallback.
+         * @return {Date} First day of the month to preselect.
+         */
+        function defaultPeriod() {
+          var match = /^(\d{4})-(\d{2})$/.exec(String(DEFAULT_MONTH || ''));
+          if (!match) return new Date();
+          return new Date(parseInt(match[1], 10), parseInt(match[2], 10) - 1, 1);
+        }
+
+        function bindEvents() {
+          dom.targetMonth.addEventListener('change', loadContext);
+          dom.targetYear.addEventListener('change', loadContext);
+          dom.content.addEventListener('click', onContentClick);
+          dom.content.addEventListener('change', onContentChange);
+          dom.content.addEventListener('input', onContentInput);
+          dom.targetAddBtn.addEventListener('click', function () { addTargetRow(); });
+          dom.runBtn.addEventListener('click', submit);
+        }
+
+        /* ---------------- data loading ---------------- */
+
+        function loadContext() {
+          var token = ++loadToken;
+          var monthIdx = parseInt(dom.targetMonth.value, 10);
+          var year = parseInt(dom.targetYear.value, 10);
+
+          clearAlert();
+          setText(dom.periodSummary, 'Loading ' + MONTHS[monthIdx] + ' ' + year + String.fromCharCode(8230));
+          dom.runBtn.disabled = true;
+          resetCaches();
+          showLoadingPlaceholders();
+
+          google.script.run
+              .withSuccessHandler(function (payload) {
+                if (token !== loadToken) return;
+                renderContext(payload);
+              })
+              .withFailureHandler(function (error) {
+                if (token !== loadToken) return;
+                showLoadFailure(error);
+              })
+              .getMonthlyInitializationPayload(monthIdx, year);
+        }
+
+        function resetCaches() {
+          boxes = { saving: [], expense: [], ibadah: [], wivaAuto: [], janeAuto: [] };
+          incomeFields = { wiva: [], jane: [] };
+          categoryBoxes = { wiva: [], jane: [] };
+          // Staged target-month edits belong to the month that was loaded, and
+          // their row numbers mean nothing in another one.
+          targetRows = [];
+          candidateIdentities = {};
+          dom.targetRowsContainer.innerHTML = '';
+          dom.targetAddContainer.innerHTML = '';
+          targetAddSeq = 0;
+        }
+
+        function showLoadingPlaceholders() {
+          var placeholder = '<div class="loading">Loading' + String.fromCharCode(8230) + '</div>';
+          ['wivaIncomeContainer', 'janeIncomeContainer', 'savingContainer', 'expenseContainer',
+           'ibadahContainer', 'wivaAutodeductContainer', 'janeAutodeductContainer',
+           'targetRowsContainer'
+          ].forEach(function (id) { dom[id].innerHTML = placeholder; });
+        }
+
+        function showLoadFailure(error) {
+          var message = (error && error.message) ? error.message : String(error);
+          showAlert('Could not load this month: ' + message);
+          setText(dom.periodSummary, 'Load failed');
+          setText(dom.incomeNote, 'Categories from Master A3:A');
+          ['wivaIncomeContainer', 'janeIncomeContainer', 'savingContainer', 'expenseContainer',
+           'ibadahContainer', 'wivaAutodeductContainer', 'janeAutodeductContainer'
+          ].forEach(function (id) { dom[id].innerHTML = emptyHtml('Unavailable.'); });
+        }
+
+        function renderContext(payload) {
+          var categories = payload.categories || [];
+          targetRows = payload.targetRows || [];
+          candidateIdentities = payload.candidateIdentities || {};
+          targetTypeOptions = payload.typeOptions || {};
+
+          setText(dom.periodSummary,
+              'Rolling ' + (payload.sourceMonth || '?') + ' forward into ' + (payload.targetMonth || '?'));
+
+          // Income has no checklist: one ledger row per person per category maps
+          // to exactly one box, so last month's figure is what the box starts at.
+          var incomeDefaults = payload.incomeDefaults || {};
+          incomeFields.wiva = renderIncomeFields(
+              dom.wivaIncomeContainer, 'wiva', categories, incomeDefaults.Wiva);
+          incomeFields.jane = renderIncomeFields(
+              dom.janeIncomeContainer, 'jane', categories, incomeDefaults.Jane);
+
+          var seededCount = countSeeded(incomeDefaults.Wiva) + countSeeded(incomeDefaults.Jane);
+          setText(dom.incomeNote, seededCount
+              ? 'Prefilled from ' + (payload.sourceMonth || 'last month') + ' — adjust as needed'
+              : 'Categories from Master A3:A');
+
+          categoryBoxes.wiva = renderCategoryChips(dom.wivaJajanCategoriesContainer, 'wiva', categories);
+          categoryBoxes.jane = renderCategoryChips(dom.janeJajanCategoriesContainer, 'jane', categories);
+
+          renderChannelOptions(payload.paymentChannels || []);
+          renderTargetRows(payload.targetMonth || '');
+
+          boxes.saving = renderChecklist(dom.savingContainer, payload.savingCandidates, 'saving-chk');
+          boxes.expense = renderChecklist(dom.expenseContainer, payload.expenseCandidates, 'expense-chk');
+          boxes.ibadah = renderChecklist(dom.ibadahContainer, payload.ibadahCandidates, 'ibadah-chk');
+          renderAutodeductLists(payload.autodeductCandidates);
+
+          recalculate();
+        }
+
+        /* ---------------- rendering ---------------- */
+
+        function emptyHtml(message) {
+          return '<div class="empty">' + escapeHtml(message) + '</div>';
+        }
+
+        /**
+         * Renders one person's income boxes, starting each at the source month's
+         * figure. `defaults` is keyed by the category text the Income sheet
+         * holds, which may differ from the Master list only by case or padding,
+         * so lookup is normalized rather than exact.
+         */
+        function renderIncomeFields(container, person, categories, defaults) {
+          if (!categories.length) {
+            container.innerHTML = emptyHtml('No income categories in Master A3:A.');
+            return [];
+          }
+
+          var seeded = Object.create(null);
+          Object.keys(defaults || {}).forEach(function (category) {
+            seeded[normalize(category)] = defaults[category];
+          });
+
+          container.innerHTML = categories.map(function (category) {
+            var amount = Math.round(Number(seeded[normalize(category)]) || 0);
+            var value = amount > 0 ? IDR_FORMAT.format(amount) : '0';
+            return '<div class="income-row">' +
+                '<span title="' + escapeHtml(category) + '">' + escapeHtml(category) + '</span>' +
+                '<input type="text" value="' + escapeHtml(value) + '" inputmode="numeric"' +
+                ' autocomplete="off" spellcheck="false"' +
+                ' class="' + person + '-inc-field" data-category="' + escapeHtml(category) + '"' +
+                ' aria-label="' + escapeHtml(person + ' ' + category) + '">' +
+                '</div>';
+          }).join('');
+          return toArray(container.querySelectorAll('input'));
+        }
+
+        /** @return {number} How many categories carry a figure worth showing. */
+        function countSeeded(defaults) {
+          return Object.keys(defaults || {}).filter(function (category) {
+            return Number(defaults[category]) > 0;
+          }).length;
+        }
+
+        function renderCategoryChips(container, person, categories) {
+          if (!categories.length) {
+            container.innerHTML = emptyHtml('None.');
+            return [];
+          }
+          container.innerHTML = categories.map(function (category) {
+            var isDefault = normalize(category) === 'salary';
+            return '<label class="chip' + (isDefault ? ' is-on' : '') + '">' +
+                '<input type="checkbox" class="' + person + '-jajan-cat-chk" value="' +
+                escapeHtml(category) + '"' + (isDefault ? ' checked' : '') + '>' +
+                escapeHtml(category) + '</label>';
+          }).join('');
+          return toArray(container.querySelectorAll('input'));
+        }
+
+        function renderChannelOptions(channels) {
+          var options = channels.length ? channels : ['BCA Expressi Rio', 'BCA Debit Jane'];
+          var html = options.map(function (channel) {
+            return '<option value="' + escapeHtml(channel) + '">' + escapeHtml(channel) + '</option>';
+          }).join('');
+
+          dom.wivaJajanChannel.innerHTML = html;
+          dom.janeJajanChannel.innerHTML = html;
+          dom.wivaJajanChannel.selectedIndex = preferredChannelIndex(dom.wivaJajanChannel, CHANNEL_RULES.wiva);
+          dom.janeJajanChannel.selectedIndex = preferredChannelIndex(dom.janeJajanChannel, CHANNEL_RULES.jane);
+        }
+
+        function preferredChannelIndex(select, rule) {
+          var options = select.options;
+          var i;
+          for (i = 0; i < options.length; i++) {
+            if (normalize(options[i].value) === rule.exact) return i;
+          }
+          for (var f = 0; f < rule.fallbacks.length; f++) {
+            var tokens = rule.fallbacks[f];
+            for (i = 0; i < options.length; i++) {
+              if (containsAll(normalize(options[i].value), tokens)) return i;
+            }
+          }
+          return 0;
+        }
+
+        function containsAll(haystack, tokens) {
+          for (var i = 0; i < tokens.length; i++) {
+            if (haystack.indexOf(tokens[i]) === -1) return false;
+          }
+          return true;
+        }
+
+        function byTypeThenChannel(a, b) {
+          var typeA = normalize(a.whoType);
+          var typeB = normalize(b.whoType);
+          if (typeA !== typeB) return typeA.localeCompare(typeB);
+          return normalize(a.noteChannel).localeCompare(normalize(b.noteChannel));
+        }
+
+        function checkRowHtml(item, classNames) {
+          var meta = [];
+          if (item.whoType && item.whoType !== DASH) meta.push(item.whoType);
+          if (item.noteChannel && item.noteChannel !== DASH && String(item.noteChannel).trim() !== '') {
+            meta.push(item.noteChannel);
+          }
+
+          var badge = '';
+          if (item.isCicilan) {
+            var left = parseInt(item.remainingMonth, 10) - 1;
+            badge = '<span class="badge">' + left + (left === 1 ? ' payment left' : ' payments left') + '</span>';
+          }
+
+          return '<label class="check-row">' +
+              '<input type="checkbox" class="' + classNames + '" value="' + escapeHtml(item.uid) +
+              '" data-amount="' + escapeHtml(item.amount) + '" checked>' +
+              '<span class="check-body">' +
+                '<span class="check-name">' + escapeHtml(item.list) + '</span>' +
+                (meta.length ? '<span class="check-meta">' + escapeHtml(meta.join(' · ')) + '</span>' : '') +
+              '</span>' +
+              badge +
+              '<span class="check-amount">' + escapeHtml(item.amountFormatted) + '</span>' +
+              '<input type="text" class="check-override" placeholder="same" inputmode="numeric"' +
+              ' autocomplete="off" spellcheck="false"' +
+              ' title="New amount for the target month. Blank keeps ' +
+              escapeHtml(item.amountFormatted) + '."' +
+              ' aria-label="Override amount for ' + escapeHtml(item.list) + '">' +
+              '</label>';
+        }
+
+        function renderChecklist(container, items, className) {
+          if (!items || !items.length) {
+            container.innerHTML = emptyHtml('Nothing to roll over.');
+            return [];
+          }
+          items.sort(byTypeThenChannel);
+          container.innerHTML = items.map(function (item) {
+            return checkRowHtml(item, className);
+          }).join('');
+          return checkboxesIn(container);
+        }
+
+        /** Only the row checkboxes — a check row also holds an override text box. */
+        function checkboxesIn(container) {
+          return toArray(container.querySelectorAll('input[type="checkbox"]'));
+        }
+
+        function renderAutodeductLists(items) {
+          if (!items || !items.length) {
+            dom.wivaAutodeductContainer.innerHTML = emptyHtml('No items.');
+            dom.janeAutodeductContainer.innerHTML = emptyHtml('No items.');
+            boxes.wivaAuto = [];
+            boxes.janeAuto = [];
+            return;
+          }
+
+          items.sort(byTypeThenChannel);
+
+          var wivaHtml = '';
+          var janeHtml = '';
+          items.forEach(function (item) {
+            var owner = normalize(item.whoType);
+            var isWiva = (owner === 'wiva' || owner === 'rio');
+            var html = checkRowHtml(item, 'autodeduct-chk ' + (isWiva ? 'wiva_auto-chk' : 'jane_auto-chk'));
+            if (isWiva) wivaHtml += html; else janeHtml += html;
+          });
+
+          dom.wivaAutodeductContainer.innerHTML = wivaHtml || emptyHtml('No items.');
+          dom.janeAutodeductContainer.innerHTML = janeHtml || emptyHtml('No items.');
+          boxes.wivaAuto = checkboxesIn(dom.wivaAutodeductContainer);
+          boxes.janeAuto = checkboxesIn(dom.janeAutodeductContainer);
+        }
+
+        /* ---------------- interaction ---------------- */
+
+        function onContentClick(event) {
+          var tab = event.target.closest ? event.target.closest('.tab') : null;
+          if (tab) { activateTab(tab); return; }
+
+          var removeAdd = event.target.closest
+              ? event.target.closest('[data-remove-target-add]') : null;
+          if (removeAdd) {
+            removeAdd.parentNode.remove();
+            recalculate();
+            return;
+          }
+
+          var toggle = event.target.closest ? event.target.closest('[data-toggle]') : null;
+          if (toggle) {
+            setGroupChecked(toggle.getAttribute('data-toggle'), toggle.getAttribute('data-on') === '1');
+          }
+        }
+
+        /**
+         * Activates a tab within its own strip only. There are two strips now —
+         * the top-level Rollover / Target month split and the per-sheet one
+         * inside the rollover panel — and a handler that reached across both
+         * would blank the inner panels every time a top tab was clicked.
+         */
+        function activateTab(tab) {
+          var strip = tab.parentNode;
+          toArray(strip.querySelectorAll('.tab')).forEach(function (el) {
+            el.classList.toggle('is-active', el === tab);
+            var panel = byId(el.getAttribute('data-panel'));
+            if (panel) panel.classList.toggle('is-active', el === tab);
+          });
+        }
+
+        function setGroupChecked(className, isChecked) {
+          var group = {
+            'saving-chk': boxes.saving,
+            'expense-chk': boxes.expense,
+            'ibadah-chk': boxes.ibadah,
+            'wiva_auto-chk': boxes.wivaAuto,
+            'jane_auto-chk': boxes.janeAuto
+          }[className] || [];
+
+          group.forEach(function (box) { box.checked = isChecked; });
+          recalculate();
+        }
+
+        function onContentChange(event) {
+          var target = event.target;
+
+          var addRow = target.closest ? target.closest('.tgt-add-row') : null;
+          if (addRow && target.parentNode.classList.contains('tgt-add-sheet')) {
+            // The row's sheet decides which Type list it offers.
+            fillTargetTypeSelect(addRow);
+            recalculate();
+            return;
+          }
+          // On Autodeduct Jajan the Type column *is* the owner, so picking it
+          // moves that person's jajan straight away.
+          if (addRow && target.parentNode.classList.contains('tgt-add-type')) {
+            recalculate();
+            return;
+          }
+
+          if (target.type !== 'checkbox') return;
+          if (target.classList.contains('wiva-jajan-cat-chk') ||
+              target.classList.contains('jane-jajan-cat-chk')) {
+            target.parentNode.classList.toggle('is-on', target.checked);
+          }
+          recalculate();
+        }
+
+        function onContentInput(event) {
+          var target = event.target;
+          if (target.classList.contains('wiva-inc-field') ||
+              target.classList.contains('jane-inc-field')) {
+            reformatAmountField(target, '0');
+          } else if (target.classList.contains('check-override')) {
+            reformatAmountField(target, '');
+            markOverrideState(target);
+          } else if (target.classList.contains('tgt-amount') ||
+              (target.parentNode && target.parentNode.classList.contains('tgt-add-amount'))) {
+            reformatAmountField(target, '');
+          }
+          recalculate();
+        }
+
+        /** Highlights the override box and strikes out the amount it replaces. */
+        function markOverrideState(field) {
+          var isSet = field.value !== '';
+          var original = field.parentNode.querySelector('.check-amount');
+          field.classList.toggle('is-set', isSet);
+          if (original) original.classList.toggle('is-replaced', isSet);
+        }
+
+        /**
+         * Reformats an amount field to '1.234.567' while holding the caret steady.
+         * @param {HTMLInputElement} field Field to reformat.
+         * @param {string} whenEmpty Value to fall back to once every digit is gone.
+         */
+        function reformatAmountField(field, whenEmpty) {
+          var caret = field.selectionStart;
+          var previousLength = field.value.length;
+          var digits = field.value.replace(/\D/g, '');
+          var formatted = digits === '' ? whenEmpty : IDR_FORMAT.format(parseInt(digits, 10));
+
+          field.value = formatted;
+          var position = Math.max(0, caret + (formatted.length - previousLength));
+          field.setSelectionRange(position, position);
+        }
+
+        /* ---------------- calculation ---------------- */
+
+        function selectedCategories(list) {
+          var set = Object.create(null);
+          for (var i = 0; i < list.length; i++) {
+            if (list[i].checked) set[normalize(list[i].value)] = true;
+          }
+          return set;
+        }
+
+        function sumIncome(fields, categorySet) {
+          var totals = { all: 0, selected: 0 };
+          for (var i = 0; i < fields.length; i++) {
+            var value = digitsOf(fields[i].value);
+            totals.all += value;
+            if (categorySet[normalize(fields[i].dataset.category)]) totals.selected += value;
+          }
+          return totals;
+        }
+
+        function recalculate() {
+          var wiva = sumIncome(incomeFields.wiva, selectedCategories(categoryBoxes.wiva));
+          var jane = sumIncome(incomeFields.jane, selectedCategories(categoryBoxes.jane));
+
+          var combinedBase = wiva.selected + jane.selected;
+          var poolRate = rateOf(dom.jajanPoolRate);
+          var wivaRate = rateOf(dom.wivaJajanRate);
+          var janeRate = rateOf(dom.janeJajanRate);
+
+          var grossPool = combinedBase * (poolRate / 100);
+          var wivaGross = grossPool * (wivaRate / 100);
+          var janeGross = grossPool * (janeRate / 100);
+
+          var totals = {
+            saving: sumChecked(boxes.saving),
+            expense: sumChecked(boxes.expense),
+            ibadah: sumChecked(boxes.ibadah),
+            wivaAuto: sumChecked(boxes.wivaAuto),
+            janeAuto: sumChecked(boxes.janeAuto)
+          };
+
+          // Autodeductions already dated in the target month deduct too, and
+          // the server counts them, so the preview has to as well or it would
+          // promise a bigger budget than Generate actually writes.
+          var targetChanges = collectTargetChanges();
+          targetChanges.undoneByRollover = markRolloverOverlap(targetChanges);
+          var carried = carriedAutodeduct();
+          var wivaNet = Math.max(0, wivaGross - totals.wivaAuto - carried.Wiva);
+          var janeNet = Math.max(0, janeGross - totals.janeAuto - carried.Jane);
+
+          showCarry(dom.wivaCarryLine, dom.wivaCarryDisplay, carried.Wiva);
+          showCarry(dom.janeCarryLine, dom.janeCarryDisplay, carried.Jane);
+
+          setText(dom.wivaIncomeTotal, idr(wiva.all));
+          setText(dom.janeIncomeTotal, idr(jane.all));
+          setText(dom.combinedSalaryDisplay, idr(combinedBase));
+          setText(dom.combinedGrossJajanDisplay, idr(grossPool));
+
+          setText(dom.wivaGrossJajanDisplay, idr(wivaGross));
+          setText(dom.wivaNetJajanDisplay, idr(wivaNet));
+          setText(dom.wivaAutodeductNetJajanDisplay, idr(wivaNet));
+          setText(dom.janeGrossJajanDisplay, idr(janeGross));
+          setText(dom.janeNetJajanDisplay, idr(janeNet));
+          setText(dom.janeAutodeductNetJajanDisplay, idr(janeNet));
+
+          setText(dom.savingSelectionTotal, idr(totals.saving));
+          setText(dom.expenseSelectionTotal, idr(totals.expense));
+          setText(dom.ibadahSelectionTotal, idr(totals.ibadah));
+          setText(dom.wivaAutodeductTotal, idr(totals.wivaAuto));
+          setText(dom.janeAutodeductTotal, idr(totals.janeAuto));
+
+          setText(dom.countSaving, countChecked(boxes.saving) + '/' + boxes.saving.length);
+          setText(dom.countExpense, countChecked(boxes.expense) + '/' + boxes.expense.length);
+          setText(dom.countIbadah, countChecked(boxes.ibadah) + '/' + boxes.ibadah.length);
+          setText(dom.countAutodeduct,
+              (countChecked(boxes.wivaAuto) + countChecked(boxes.janeAuto)) + '/' +
+              (boxes.wivaAuto.length + boxes.janeAuto.length));
+
+          setText(dom.statIncome, idr(wiva.all + jane.all));
+          var cost = totals.saving + totals.expense + totals.ibadah + grossPool + targetMonthCost();
+          setText(dom.statCost, idr(cost));
+          setText(dom.statNetJajan, idr(wivaNet) + ' / ' + idr(janeNet));
+          var remaining = wiva.all + jane.all - cost;
+          setText(dom.statRemaining, idr(remaining));
+          dom.statRemaining.classList.toggle('is-negative', remaining < 0);
+          // Repeated on the target-month tab: the edits driving it live there,
+          // and the jajan panel is a tab away.
+          setText(dom.targetNetJajanDisplay, idr(wivaNet) + ' / ' + idr(janeNet));
+
+          updateValidation(poolRate, wivaRate, janeRate, targetChanges);
+        }
+
+        function updateValidation(poolRate, wivaRate, janeRate, targetChanges) {
+          var splitTotal = wivaRate + janeRate;
+          var poolValid = poolRate >= 0 && poolRate <= 100;
+          var splitValid = Math.abs(splitTotal - 100) < 0.001;
+          var problems = (targetChanges && targetChanges.problems) || [];
+
+          dom.jajanPoolRate.classList.toggle('is-invalid', !poolValid);
+          dom.wivaJajanRate.classList.toggle('is-invalid', !splitValid);
+          dom.janeJajanRate.classList.toggle('is-invalid', !splitValid);
+
+          // Target-month edits are written before the rollover reads anything,
+          // so a bad one has to stop the run rather than half-apply.
+          var isValid = poolValid && splitValid && problems.length === 0;
+
+          var message;
+          if (!poolValid) {
+            message = 'Pool rate must be between 0% and 100%';
+          } else if (!splitValid) {
+            message = 'Allocation split is ' + round2(splitTotal) + '% · must total 100%';
+          } else if (problems.length) {
+            message = problems[0];
+          } else {
+            message = describeReady(targetChanges);
+          }
+
+          var undone = (targetChanges && targetChanges.undoneByRollover) || [];
+          if (isValid && undone.length) {
+            message = 'Heads up · ' + undone.length +
+                (undone.length === 1 ? ' removed row is' : ' removed rows are') +
+                ' still ticked on the rollover tab and will come back (' +
+                undone.slice(0, 2).join(', ') + (undone.length > 2 ? '…' : '') + ')';
+          }
+
+          setText(dom.validationAlertBox, message);
+          dom.validationAlertBox.classList.toggle('is-error', !isValid);
+          dom.validationAlertBox.classList.toggle('is-warn', isValid && undone.length > 0);
+          dom.runBtn.disabled = isSubmitting || !isValid;
+        }
+
+        /** Says whether the run will also write target-month edits first. */
+        function describeReady(targetChanges) {
+          var staged = targetChanges
+              ? targetChanges.updates.length + targetChanges.deletions.length +
+                targetChanges.additions.length
+              : 0;
+          if (!staged) return 'Allocation split 100% · ready';
+          return 'Ready · ' + staged + (staged === 1 ? ' target-month edit' : ' target-month edits') +
+              ' applied first';
+        }
+
+        function round2(value) {
+          return Math.round(value * 100) / 100;
+        }
+
+        /* ---------------- submit ---------------- */
+
+        function collectIncome(fields) {
+          var income = {};
+          fields.forEach(function (field) {
+            income[field.dataset.category] = digitsOf(field.value);
+          });
+          return income;
+        }
+
+        function collectValues(list) {
+          var values = [];
+          list.forEach(function (box) { if (box.checked) values.push(box.value); });
+          return values;
+        }
+
+        /** {uid: amount} for every ticked row whose override box was filled in. */
+        function collectOverrides() {
+          var overrides = {};
+          ['saving', 'expense', 'ibadah', 'wivaAuto', 'janeAuto'].forEach(function (name) {
+            boxes[name].forEach(function (box) {
+              if (!box.checked) return;
+              var digits = overrideDigits(box);
+              if (digits !== '') overrides[box.value] = parseInt(digits, 10);
+            });
+          });
+          return overrides;
+        }
+
+        /** The target-month tab's edits, without the client-only problem list. */
+        function targetChangesPayload() {
+          var changes = collectTargetChanges();
+          return {
+            updates: changes.updates,
+            deletions: changes.deletions,
+            additions: changes.additions
+          };
+        }
+
+        function buildPayload() {
+          return {
+            targetMonth: parseInt(dom.targetMonth.value, 10),
+            targetYear: parseInt(dom.targetYear.value, 10),
+            wivaIncome: collectIncome(incomeFields.wiva),
+            janeIncome: collectIncome(incomeFields.jane),
+            wivaJajanIncomeCategories: collectValues(categoryBoxes.wiva),
+            janeJajanIncomeCategories: collectValues(categoryBoxes.jane),
+            jajanPoolRate: rateOf(dom.jajanPoolRate),
+            wivaJajanRate: rateOf(dom.wivaJajanRate),
+            janeJajanRate: rateOf(dom.janeJajanRate),
+            wivaJajanChannel: dom.wivaJajanChannel.value || 'BCA Expressi Rio',
+            janeJajanChannel: dom.janeJajanChannel.value || 'BCA Debit Jane',
+            selectedSaving: collectValues(boxes.saving),
+            selectedExpense: collectValues(boxes.expense),
+            selectedIbadah: collectValues(boxes.ibadah),
+            selectedAutodeduct: collectValues(boxes.wivaAuto).concat(collectValues(boxes.janeAuto)),
+            amountOverrides: collectOverrides(),
+            // Applied by executeMonthlyGeneration before it reads a single
+            // sheet, so the rollover sees the month the user just fixed up.
+            targetMonthChanges: targetChangesPayload()
+          };
+        }
+
+        function submit() {
+          if (isSubmitting || dom.runBtn.disabled) return;
+
+          isSubmitting = true;
+          dom.runBtn.disabled = true;
+          dom.runBtn.textContent = 'Starting' + String.fromCharCode(8230);
+          clearAlert();
+
+          google.script.run
+              .withFailureHandler(function (error) {
+                isSubmitting = false;
+                dom.runBtn.disabled = false;
+                dom.runBtn.textContent = 'Generate Data';
+                showAlert('Could not start the rollover: ' +
+                    ((error && error.message) ? error.message : String(error)));
+              })
+              .showLoadingAndSummary(buildPayload());
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+  </body>
+</html>

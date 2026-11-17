@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        margin: 0;
+        padding: 16px;
+        color: #1e293b;
+        background-color: #f8fafc;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .header-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .header-title h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+      }
+
+      .badge {
+        background-color: #eff6ff;
+        color: #2563eb;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        border: 1px solid #bfdbfe;
+      }
+
+      /* Table Container */
+      .table-container {
+        flex: 1;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background-color: #ffffff;
+        margin-bottom: 16px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.85rem;
+      }
+
+      thead {
+        position: sticky;
+        top: 0;
+        background-color: #f1f5f9;
+        z-index: 10;
+      }
+
+      th {
+        padding: 10px 12px;
+        font-weight: 600;
+        color: #475569;
+        border-bottom: 1px solid #cbd5e1;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+      }
+
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+      }
+
+      tr:hover {
+        background-color: #f8fafc;
+      }
+
+      .row-badge {
+        font-family: monospace;
+        background-color: #f1f5f9;
+        color: #475569;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.8rem;
+      }
+
+      .card-num {
+        font-family: monospace;
+        letter-spacing: -0.02em;
+        color: #64748b;
+      }
+
+      .desc-text {
+        font-weight: 500;
+        color: #0f172a;
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .amount-text {
+        text-align: right;
+        font-weight: 600;
+        color: #059669;
+      }
+
+      /* Summary Footer */
+      .summary-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+      }
+
+      .total-label {
+        font-weight: 600;
+        color: #475569;
+      }
+
+      .total-amount {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #047857;
+      }
+
+      /* Actions */
+      .actions-container {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .btn-secondary {
+        background-color: #ffffff;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+      }
+
+      .btn-secondary:hover {
+        background-color: #f1f5f9;
+        color: #1e293b;
+      }
+
+      .btn-primary {
+        background-color: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-primary:hover {
+        background-color: #1d4ed8;
+      }
+
+      .btn-primary:disabled {
+        background-color: #93c5fd;
+        cursor: not-allowed;
+      }
+
+      /* Loading State */
+      #loadingState {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        gap: 16px;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e2e8f0;
+        border-top: 4px solid #2563eb;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div id="contentState" style="display: flex; flex-direction: column; height: 100%;">
+        <div class="header-section">
+          <div class="header-title">
+            <h2>💳 Confirm Paid by Selection</h2>
+          </div>
+          <span class="badge" id="itemCountBadge">0 items</span>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 65px;">Row #</th>
+                <th>Card Number</th>
+                <th>Description / Merchant</th>
+                <th style="text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="itemsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="summary-footer">
+          <span class="total-label">Grand Total Selection:</span>
+          <span class="total-amount" id="grandTotalText">Rp 0</span>
+        </div>
+
+        <div class="actions-container">
+          <button class="btn btn-secondary" onclick="google.script.host.close()">Cancel</button>
+          <button class="btn btn-primary" id="btnConfirm" onclick="onConfirmPaid()">
+            <span>Confirm & Mark Paid</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="loadingState">
+        <div class="spinner"></div>
+        <div style="font-weight: 600; color: #1e293b;" id="loadingText">Processing payment & clearing selections...</div>
+      </div>
+    </div>
+
+    <script>
+      // Received raw JSON payload from GAS HTML Template
+      var selectedItems = <?!= selectedItemsJson || '[]' ?>;
+
+      function formatRupiah(num) {
+        if (typeof num !== 'number' || isNaN(num)) {
+          return num ? num.toString() : 'Rp 0';
+        }
+        return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+      }
+
+      function initTable() {
+        console.log("Initializing PaidBySelectionDialog with " + selectedItems.length + " item(s)");
+        var tbody = document.getElementById('itemsTableBody');
+        tbody.innerHTML = '';
+
+        var totalAmount = 0;
+
+        selectedItems.forEach(function(item) {
+          var tr = document.createElement('tr');
+          
+          var tdRow = document.createElement('td');
+          tdRow.innerHTML = '<span class="row-badge">#' + item.rowIndex + '</span>';
+          tr.appendChild(tdRow);
+
+          var tdCard = document.createElement('td');
+          tdCard.className = 'card-num';
+          tdCard.textContent = item.cardNumber || 'N/A';
+          tr.appendChild(tdCard);
+
+          var tdDesc = document.createElement('td');
+          tdDesc.className = 'desc-text';
+          tdDesc.textContent = item.description || '-';
+          tdDesc.title = item.description || '';
+          tr.appendChild(tdDesc);
+
+          var tdAmt = document.createElement('td');
+          tdAmt.className = 'amount-text';
+          tdAmt.textContent = formatRupiah(item.amount);
+          tr.appendChild(tdAmt);
+
+          tbody.appendChild(tr);
+
+          if (typeof item.amount === 'number' && !isNaN(item.amount)) {
+            totalAmount += item.amount;
+          }
+        });
+
+        document.getElementById('itemCountBadge').textContent = selectedItems.length + ' item(s)';
+        document.getElementById('grandTotalText').textContent = formatRupiah(totalAmount);
+      }
+
+      function onConfirmPaid() {
+        var btnConfirm = document.getElementById('btnConfirm');
+        btnConfirm.disabled = true;
+
+        document.getElementById('contentState').style.display = 'none';
+        document.getElementById('loadingState').style.display = 'flex';
+
+        var targetRowIndexes = selectedItems.map(function(item) {
+          return item.rowIndex;
+        });
+
+        console.log("Submitting targetRowIndexes to server:", targetRowIndexes);
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            console.log("Successfully processed paid by selection:", response);
+            google.script.host.close();
+          })
+          .withFailureHandler(function(error) {
+            console.error("Error processing paid by selection:", error);
+            alert("Error processing updates: " + (error.message || error));
+            document.getElementById('contentState').style.display = 'flex';
+            document.getElementById('loadingState').style.display = 'none';
+            btnConfirm.disabled = false;
+          })
+          .processPaidAndClearSelection(targetRowIndexes);
+      }
+
+      window.onload = function() {
+        initTable();
+      };
+    </script>
+  </body>
+</html>
