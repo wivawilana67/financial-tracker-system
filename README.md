@@ -326,7 +326,7 @@ There are two complete environments: TEST for every development step, PROD for r
 
 | | TEST | PROD |
 | --- | --- | --- |
-| Git branch | `develop` (GitHub default branch, base of every PR) | `master` (release; changes only by merging `develop`) |
+| Git branch | `develop` (GitHub default branch; all work is committed here) | `master` (release; changes only by merging `develop`) |
 | Phone URL | `https://wivawilana67.github.io/financial-tracker-system/test/` | `https://wivawilana67.github.io/financial-tracker-system/` |
 | Google Sheet | "Financial Tracker (TEST)", a File → Make a copy of the real sheet | the real sheet |
 | Apps Script | the copy's bound script (own Script ID and `/exec` URL) | the real sheet's bound script |
@@ -446,7 +446,7 @@ Steps 4 to 6 are done in **both** projects: the real sheet's Apps Script project
 3. **Automatic Deployment Requirement**: Every development step or code change **must always** be deployed to TEST immediately with `npm run push-test` (clasp push plus an update of the existing TEST web app deployment). PROD is deployed only on release, from a clean `master`, with `npm run push-prod`.
 4. **Git Sync**: Before pushing code to remote git branches, make sure your local repository matches the Google Apps Script state and all modifications are staged/committed.
 5. **Release Flow**:
-   1. Branch `feat/*`, `fix/*` or `chore/*` from `develop`, open a PR into `develop`, and deploy with `npm run push-test`.
+   1. Commit and push straight to `develop` (no feature branches or worktrees unless explicitly wanted), and deploy with `npm run push-test`.
    2. Check the change in the TEST phone app (`/test/`).
    3. Open a PR from `develop` into `master` and merge it. This publishes the front end to the root of the Pages site.
    4. On a clean `master`, run `npm run push-prod`.

@@ -51,7 +51,8 @@ The project-specific identity, runtime environments, folder layouts, business lo
 - Adhere strictly to the project's `.gitignore` rules.
 - Review the list of modified and untracked files before staging changes.
 - Ensure only source code files, configurations, and assets matching the project guidelines are committed. Avoid committing credentials, local configuration overrides, or large binary packages.
-- `develop` is the default branch. Committing and pushing straight to `develop` is fine (it is not protected); for larger work, short-lived `feat/*`, `fix/*` and `chore/*` branches can start from `develop` and merge back into it.
+- `develop` is the default branch and where all work happens: commit and push straight to it (it is not protected).
+- Never create a new branch or a git worktree unless the owner explicitly asks for one in that request.
 - `master` is PROD and protected: it changes only through a PR `develop` → `master` (no direct pushes, no force-push, no deletion — enforced for admins too).
 - Pushes to either branch that touch `web/` rebuild the GitHub Pages site: `master` at the root, `develop` at `/test/`.
 - Release order: merge `develop` → `master`, then `npm run push-prod` from `master`.
