@@ -36,13 +36,13 @@ The project-specific identity, runtime environments, folder layouts, business lo
 11. **Performance & Efficiency:** Always prioritize performance and efficiency when implementing code.
 
 12. **Google Apps Script & Clasp Deployment Rules**:
-    - The Script ID lives only in the local, gitignored `.clasp.json` (copy `.clasp.example.json`). The web app deployment ID lives only in the gitignored `.deploy.json` (copy `.deploy.example.json`).
-    - This project operates in a single environment (no separate `dev` or `prod` environments).
-    - Every development step/code change MUST always be deployed to Google Apps Script immediately using `npm run push` (clasp push plus an update of the existing web app deployment).
+    - This project has two environments, TEST and PROD. Script IDs live only in the gitignored `.clasp-test.json` and `.clasp-prod.json` (copy `.clasp.example.json` to each). Web app deployment IDs live only in the gitignored `.deploy.json` (copy `.deploy.example.json`), as `{ "test": "...", "prod": "..." }`.
+    - Every development step/code change MUST always be deployed to TEST immediately using `npm run push-test` (clasp push plus an update of the existing TEST web app deployment), from any branch.
+    - PROD is deployed only on release, from a clean `master`, with `npm run push-prod`. While developing, never run backend editor functions or pushes against PROD.
 
 13. **Public Repository Secrets**:
     - This repository is public. Never commit IDs, tokens, URLs of the web app, spreadsheet IDs, emails or financial data.
-    - Secrets live in Script Properties (`API_TOKEN`, `GOOGLE_CLIENT_ID`, `ALLOWED_EMAILS`, `SPREADSHEET_ID`) or on each phone.
+    - Secrets live in Script Properties (`API_TOKEN`, `GOOGLE_CLIENT_ID`, `ALLOWED_EMAILS`, `SPREADSHEET_ID`, `APP_ENV`) or on each phone. Each project (TEST and PROD) has its own Script Properties.
 
 ---
 
@@ -51,7 +51,11 @@ The project-specific identity, runtime environments, folder layouts, business lo
 - Adhere strictly to the project's `.gitignore` rules.
 - Review the list of modified and untracked files before staging changes.
 - Ensure only source code files, configurations, and assets matching the project guidelines are committed. Avoid committing credentials, local configuration overrides, or large binary packages.
-- The only branch is `master` (GitHub default). Every push to `master` that touches `web/` publishes the phone app to GitHub Pages.
+- `develop` is the default branch and where all work happens: commit and push straight to it (it is not protected).
+- Never create a new branch or a git worktree unless the owner explicitly asks for one in that request.
+- `master` is PROD and protected: it changes only through a PR `develop` → `master` (no direct pushes, no force-push, no deletion — enforced for admins too).
+- Pushes to either branch that touch `web/` rebuild the GitHub Pages site: `master` at the root, `develop` at `/test/`.
+- Release order: merge `develop` → `master`, then `npm run push-prod` from `master`.
 
 ---
 
@@ -59,6 +63,7 @@ The project-specific identity, runtime environments, folder layouts, business lo
 
 - Root: the Apps Script files (flat, next to `appsscript.json`). Clasp pushes only these, through the `.claspignore` allowlist.
 - `web/`: the phone PWA (vanilla ES modules, no build step), published to GitHub Pages. `web/` must never call `google.script.run`; it talks to the web app over HTTP only.
-- `scripts/`: local tooling (the `npm run push` deploy helper).
+- `web/config.js` decides test vs prod from the URL (`/test/` is TEST).
+- `scripts/`: local tooling (the deploy helper behind `npm run push-test`, `push-prod`, `pull-test` and `pull-prod`).
 - `.github/`: the Pages workflow and Dependabot config.
 - The root Apps Script files must never be moved into subfolders, because clasp turns folder paths into file names and the by-name dialog lookups would break.

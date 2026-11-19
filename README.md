@@ -6,7 +6,7 @@ This repository contains the Google Apps Script project for the Financial Tracke
 
 * **Runtime**: Google Apps Script (V8 Engine)
 * **Local Integration**: Clasp (Command Line Apps Script Projects), installed globally: `npm install -g @google/clasp`. The repo has no npm dependencies.
-* **Script ID**: kept only in the local, gitignored `.clasp.json` (copy `.clasp.example.json` and paste the ID from the Apps Script project settings). It is not committed because this repository is public.
+* **Script IDs**: kept only in the local, gitignored `.clasp-test.json` (TEST) and `.clasp-prod.json` (PROD). Copy `.clasp.example.json` to each and paste the ID from that project's Apps Script settings. They are not committed because this repository is public.
 * **Phone app**: a PWA in `web/` (vanilla ES modules, no build step), published to GitHub Pages. See [Phone app (PWA)](#phone-app-pwa).
 * **Time zone**: `Asia/Jakarta` in `appsscript.json` — must match the spreadsheet (File → Settings), or dates read from the sheet land in the wrong month.
 
@@ -318,7 +318,32 @@ The log only appends transactions it does not already hold (fingerprint: all sev
 
 ## Phone app (PWA)
 
-The phone app lives in `web/`, is served from GitHub Pages at `https://wivawilana67.github.io/financial-tracker-system/`, and talks to the Apps Script web app over HTTP. The sheet functions above run unchanged; the phone only reaches them through the action table below.
+The phone app lives in `web/`, is served from GitHub Pages in two builds (PROD at `https://wivawilana67.github.io/financial-tracker-system/`, TEST at `https://wivawilana67.github.io/financial-tracker-system/test/`), and talks to the Apps Script web app over HTTP. The sheet functions above run unchanged; the phone only reaches them through the action table below.
+
+### Environments: TEST and PROD
+
+There are two complete environments: TEST for every development step, PROD for releases. Each one has its own branch, phone URL, sheet, Apps Script project and tokens.
+
+| | TEST | PROD |
+| --- | --- | --- |
+| Git branch | `develop` (GitHub default branch; all work is committed here) | `master` (release; changes only by merging `develop`) |
+| Phone URL | `https://wivawilana67.github.io/financial-tracker-system/test/` | `https://wivawilana67.github.io/financial-tracker-system/` |
+| Google Sheet | "Financial Tracker (TEST)", a File → Make a copy of the real sheet | the real sheet |
+| Apps Script | the copy's bound script (own Script ID and `/exec` URL) | the real sheet's bound script |
+| Local clasp target (gitignored) | `.clasp-test.json` | `.clasp-prod.json` |
+| Backend deploy | `npm run push-test` (any branch) | `npm run push-prod` (clean `master` only) |
+| Front-end deploy | push to `develop` → `/test/` | merge `develop` → `master` → root |
+| `APP_ENV` Script Property | `test` | `prod` |
+| Name on the phone | Finance TEST | Finance |
+
+The guards that keep the two apart:
+
+* **APP_ENV check**: the backend returns `APP_ENV` in `doGet` and in `session`. The phone knows its own environment from its URL (`/test/` is TEST). It refuses a backend of the other environment.
+* **TEST banner**: the test app shows an orange TEST banner, so you always see which environment you are in.
+* **Separate storage**: the test app keeps its settings under `fintrack.test.*` keys, so the two apps on one phone never share a URL or token.
+* **Different tokens**: each environment has its own `API_TOKEN`. A TEST token does not open PROD.
+
+The test sheet holds a copy of the real financial data, so it must stay private, the same as the real sheet. CC Sync in TEST reads the same Gmail as PROD, but writes only to the test sheet.
 
 ### What it does
 
@@ -358,43 +383,70 @@ The request path is: the PWA on GitHub Pages sends a `POST` with a `text/plain` 
 
 ### One-time setup (owner)
 
-1. **Google Cloud**
+Steps 4 to 6 are done in **both** projects: the real sheet's Apps Script project (PROD) and the test copy's (TEST).
+
+1. **Google Cloud** (once, shared by both environments, because both use the same origin)
    * Create a new project.
    * APIs & Services → OAuth consent screen: user type External, publishing status Testing. Add both Google accounts as test users. Scopes: only `openid`, `email` and `profile`.
    * Credentials → Create OAuth client ID → Web application. Authorized JavaScript origin: `https://wivawilana67.github.io` (no path).
    * Copy the Client ID.
-2. **Apps Script** → Project Settings → Script Properties. Add:
-   * `API_TOKEN`: generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
-   * `GOOGLE_CLIENT_ID`: the Client ID from step 1
-   * `ALLOWED_EMAILS`: comma-separated list of the allowed Google accounts
-   * `SPREADSHEET_ID`: from the sheet URL
-3. Run `npm run push-code`, then in the Apps Script editor run `authorizeApi` once and accept the permissions.
-4. Deploy → New deployment → Web app. Execute as: Me. Who has access: Anyone. Copy the deployment ID into `.deploy.json` (copy `.deploy.example.json` first). Keep the `/exec` URL in your password manager.
-5. GitHub → Settings → Pages → Source: GitHub Actions.
-6. On each phone, open `https://wivawilana67.github.io/financial-tracker-system/`, enter the `/exec` URL and the token, then sign in with Google.
-   * Android: tap Install app.
-   * iPhone: works in Safari. Optional: Share → Add to Home Screen.
+2. **Create the test copy of the sheet**
+   * Open the real "Financial Tracker" sheet → File → Make a copy. Name the copy "Financial Tracker (TEST)".
+   * Installable time-driven triggers are not copied. Do not add any to the test copy.
+3. **Script IDs**
+   * Real sheet → Extensions → Apps Script → Project Settings: copy the Script ID into `.clasp-prod.json` (copy `.clasp.example.json` to that name first).
+   * Test copy → Extensions → Apps Script → Project Settings: copy the Script ID into `.clasp-test.json` (copy `.clasp.example.json` to that name first).
+4. **Script Properties** (Project Settings → Script Properties), in each project. The values differ where noted:
+   * `API_TOKEN`: generate a different token for each project with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+   * `GOOGLE_CLIENT_ID`: the Client ID from step 1 (the same in both)
+   * `ALLOWED_EMAILS`: comma-separated list of the allowed Google accounts (the same in both)
+   * `SPREADSHEET_ID`: the ID of that project's own sheet, from its URL. The real sheet in PROD, the copy in TEST.
+   * `APP_ENV`: `prod` in the real sheet's project, `test` in the copy's project.
+5. **Push and authorize** (both projects)
+   * From the repository root, run `npm run push-test`. In the test project's Apps Script editor, run `authorizeApi` once and accept the permissions.
+   * From a clean `master` (merge `develop` first), run `npm run push-prod`. In the real project's Apps Script editor, run `authorizeApi` once and accept the permissions.
+6. **Deployments** (both projects): Deploy → New deployment → Web app. Execute as: Me. Who has access: Anyone. Keep each `/exec` URL in your password manager. Put both deployment IDs into `.deploy.json` (copy `.deploy.example.json` first), in this shape:
+   ```json
+   { "test": "<test deployment ID>", "prod": "<prod deployment ID>" }
+   ```
+7. **GitHub**
+   * Settings → General → Default branch: `develop`.
+   * Settings → Environments → github-pages → Deployment branches: allow `master` and `develop`. Without both, one of the two builds cannot deploy.
+   * Settings → Pages → Source: GitHub Actions.
+8. **On each phone**, sign in once per environment, then install:
+   * TEST: open `https://wivawilana67.github.io/financial-tracker-system/test/`, enter the TEST `/exec` URL and the TEST token, then sign in with Google.
+   * PROD: open `https://wivawilana67.github.io/financial-tracker-system/`, enter the PROD `/exec` URL and the PROD token, then sign in with Google.
+   * Android: tap Install app. TEST installs as "Finance TEST", separate from "Finance".
+   * iPhone: works in Safari. Optional: Share → Add to Home Screen. TEST is added as "Finance TEST", separate from "Finance".
 
 ### Deploy changes
 
-* **Backend** (the root Apps Script files): run `npm run push`. It pushes the code and moves the existing deployment to a new version. The URL does not change.
-* **Front end** (`web/`): push to `master`. The "Deploy web to GitHub Pages" workflow publishes `web/`.
+* **Backend** (the root Apps Script files):
+  * `npm run push-test` pushes the code to the TEST project and moves its web app deployment to a new version. Run it after every change, from any branch.
+  * `npm run push-prod` does the same for the PROD project. Run it only on release, from a clean `master`.
+  * The `/exec` URLs do not change.
+* **Front end** (`web/`): push to `develop` and the "Deploy web to GitHub Pages" workflow publishes it to `/test/`. Merge `develop` into `master` and it publishes to the root. Both builds are one GitHub Pages site.
+* **Pull a project back** into the local files: `npm run pull-test` or `npm run pull-prod`. Each copies that target's Script ID into `.clasp.json` and then runs `clasp pull`. This overwrites local files, so commit first.
 
 ## Development Workflow & Rules
 
-1. **Single Environment**: This project runs in a single environment. There are no separate `dev` or `prod` environments.
-2. **Local Syncing** (needs `clasp` installed globally and `clasp login` done once). `.clasp.json` holds the script ID and is **not committed**: copy `.clasp.example.json` to `.clasp.json` and paste the ID.
-   * Pull latest changes from Google Apps Script:
+1. **Two Environments**: TEST and PROD (see [Environments: TEST and PROD](#environments-test-and-prod)). Every development step lands on TEST first. PROD receives releases only. While developing, never run backend editor functions or pushes against PROD.
+2. **Local Syncing** (needs `clasp` installed globally and `clasp login` done once). The Script IDs are in `.clasp-test.json` and `.clasp-prod.json`, which are **not committed**: copy `.clasp.example.json` to each name and paste that project's ID.
+   * Pull the latest code from Google Apps Script (overwrites local files, so commit first):
      ```bash
-     npm run pull
+     npm run pull-test
+     npm run pull-prod
      ```
-   * Push changes and update the web app deployment (see [Phone app (PWA)](#phone-app-pwa)). `.deploy.json` holds the deployment ID and is also not committed; without it only the code is pushed and a warning is printed:
+   * Push changes and update the web app deployment (see [Phone app (PWA)](#phone-app-pwa)). `.deploy.json` holds both deployment IDs and is also not committed. Without it only the code is pushed and a warning is printed:
      ```bash
-     npm run push
+     npm run push-test
+     npm run push-prod
      ```
-   * Push the code only, without touching the deployment:
-     ```bash
-     npm run push-code
-     ```
-3. **Automatic Deployment Requirement**: Every development step or code change **must always** be immediately deployed using `npm run push` (clasp push plus an update of the existing web app deployment).
+     `push-prod` runs only from a clean `master`.
+3. **Automatic Deployment Requirement**: Every development step or code change **must always** be deployed to TEST immediately with `npm run push-test` (clasp push plus an update of the existing TEST web app deployment). PROD is deployed only on release, from a clean `master`, with `npm run push-prod`.
 4. **Git Sync**: Before pushing code to remote git branches, make sure your local repository matches the Google Apps Script state and all modifications are staged/committed.
+5. **Release Flow**:
+   1. Commit and push straight to `develop` (no feature branches or worktrees unless explicitly wanted), and deploy with `npm run push-test`.
+   2. Check the change in the TEST phone app (`/test/`).
+   3. Open a PR from `develop` into `master` and merge it. This publishes the front end to the root of the Pages site.
+   4. On a clean `master`, run `npm run push-prod`.

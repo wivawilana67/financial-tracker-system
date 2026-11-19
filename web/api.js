@@ -2,8 +2,9 @@
 // The Google ID token comes from auth.js and is sent in the body only; it is never persisted.
 
 import { getIdToken, clearIdToken } from './auth.js';
+import { ENV, STORAGE_PREFIX } from './config.js';
 
-const KEYS = { url: 'fintrack.backendUrl', token: 'fintrack.token' };
+const KEYS = { url: `${STORAGE_PREFIX}backendUrl`, token: `${STORAGE_PREFIX}token` };
 const BACKEND_PATTERN = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
 const CLIENT_ID_PATTERN = /^[\w.-]+\.apps\.googleusercontent\.com$/;
 const MIN_TOKEN_LENGTH = 32;
@@ -50,6 +51,14 @@ export function saveSettings(url, token) {
   if (!write(KEYS.url, url) || !write(KEYS.token, token)) throw new Error('This browser blocked saving settings');
 }
 
+// Returns '' when the backend serves this app's environment, otherwise the message to show the user.
+export function envMismatch(backendEnv) {
+  const env = typeof backendEnv === 'string' ? backendEnv : '';
+  if (env === ENV) return '';
+  console.error('[api] environment mismatch', { app: ENV, backend: env || 'unset' });
+  return `This is the ${ENV.toUpperCase()} app but the backend is ${env ? env.toUpperCase() : 'not configured (APP_ENV missing)'}. Check the backend URL in Settings.`;
+}
+
 // GET <backendUrl> returns the public Google OAuth client ID.
 export async function fetchClientId() {
   const { url } = getSettings();
@@ -57,6 +66,8 @@ export async function fetchClientId() {
   const res = await fetch(url, { method: 'GET', cache: 'no-store' });
   if (!res.ok) throw new Error(`Backend error ${res.status}`);
   const json = await res.json();
+  const mismatch = envMismatch(json.env);
+  if (mismatch) throw new Error(mismatch);
   if (!json.ok || !CLIENT_ID_PATTERN.test(json.clientId)) {
     throw new Error(json.error || 'Sign-in is not configured on the backend');
   }
