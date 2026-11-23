@@ -171,3 +171,29 @@ def dashboard_for(month: date) -> dict:
     auto_total = autodeduct.aggregate(s=Sum('amount'))['s'] or Decimal(0)
     realized = autodeduct.filter(paid=True).aggregate(s=Sum('amount'))['s'] or Decimal(0)
     return mr.dashboard(income_total, totals, auto_total, realized)
+
+
+def simulation_for(month: date, adjustments: dict | None = None) -> dict:
+    """Simulation baseline for the month, with optional what-if amounts.
+
+    `adjustments` may set 'income' (total), 'saving', 'expense', 'ibadah' or 'autodeduct' to a
+    different total. Net jajan is always the month's stored Jajan rows; it is not recalculated for
+    a what-if. The remaining amount is mr.simulated_remaining.
+    """
+    _check_month(month)
+    adjustments = adjustments or {}
+    board = dashboard_for(month)
+    rows = LedgerEntry.objects.filter(month=month)
+    totals = {s.ledger: s.total for s in board['ledgers']}
+    jajan_net = {owner: (rows.filter(ledger=mr.EXPENSE, type_name__iexact=mr.JAJAN, list_name=owner)
+                         .aggregate(s=Sum('amount'))['s'] or Decimal(0)) for owner in ('Wiva', 'Jane')}
+    income = adjustments.get('income', board['income'])
+    saving = adjustments.get('saving', totals['saving'])
+    expense = adjustments.get('expense', totals['expense'])
+    ibadah = adjustments.get('ibadah', totals['ibadah'])
+    autodeduct = adjustments.get('autodeduct', rows.filter(ledger='autodeduct').aggregate(s=Sum('amount'))['s'] or Decimal(0))
+    left = mr.simulated_remaining(income, saving, expense, sum(jajan_net.values(), Decimal(0)), ibadah, autodeduct)
+    return {
+        'income': income, 'saving': saving, 'expense': expense, 'ibadah': ibadah,
+        'autodeduct': autodeduct, 'jajan_net': jajan_net, 'remaining': left,
+    }

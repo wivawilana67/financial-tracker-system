@@ -51,9 +51,26 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
+export interface LedgerTotal {
+  ledger: string;
+  total: string;
+  percent_of_income: string;
+  target: string;
+  to_target_percent: string;
+}
+
+export interface DashboardResponse {
+  month: string;
+  income: string;
+  ledgers: LedgerTotal[];
+  expected_remaining: string;
+  current_remaining: string;
+}
+
 export const api = {
   session: () => request<Session>('session'),
   healthDb: () => request<{ status: string; database: string }>('health/db'),
+  dashboard: (month: string) => request<DashboardResponse>(`dashboard?month=${encodeURIComponent(month)}`),
 };
 
 /** '' when the API serves this app's environment, otherwise the message to show. */

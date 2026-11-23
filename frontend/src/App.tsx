@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, envMismatch, onUnauthorized, type Session } from './api';
 import { initAuth, promptSignIn, renderSignInButton, signOut } from './auth';
 import { APP_ENV, GOOGLE_CLIENT_ID, IS_PROD } from './config';
+import Dashboard from './Dashboard';
 
 type View =
   | { kind: 'starting' }
@@ -64,7 +65,7 @@ export default function App() {
   return (
     <div className="app">
       {!IS_PROD && <div className="env-banner">{APP_ENV.toUpperCase()}</div>}
-      <main className="card">
+      <main className="card wide">
         <h1>Financial Tracker</h1>
 
         {view.kind === 'starting' && <p className="muted">Loading…</p>}
@@ -102,6 +103,7 @@ export default function App() {
               </button>
             </div>
             {dbStatus && <p className="muted" aria-live="polite">{dbStatus}</p>}
+            <Dashboard initialMonth={view.session.month} />
           </>
         )}
       </main>

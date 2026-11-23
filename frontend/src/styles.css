@@ -46,3 +46,26 @@ button {
 }
 button.secondary { background: transparent; color: var(--accent); }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Dashboard */
+.card.wide { max-width: 880px; }
+.dashboard { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+.dash-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+h2 { font-size: 1.15rem; margin: 0; }
+.month-pick { display: flex; gap: 8px; align-items: center; color: var(--muted); }
+.month-pick input { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 14px 0; }
+.stat { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.stat-label { display: block; color: var(--muted); font-size: .85rem; }
+.stat-value { display: block; font-size: 1.15rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat.good .stat-value { color: var(--good); }
+.stat.bad .stat-value { color: var(--bad); }
+.ledgers { display: grid; gap: 14px; }
+.ledger-head, .ledger-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: .95rem; }
+.bar { position: relative; height: 14px; background: var(--line); border-radius: 999px; margin: 6px 0; overflow: visible; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+.bar-fill.over { background: var(--bad); }
+.bar-target { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); }
+.ledger-foot { font-variant-numeric: tabular-nums; }
+.note-foot { font-size: .85rem; margin-top: 12px; }
+@media (prefers-reduced-motion: reduce) { .bar-fill { transition: none; } }
