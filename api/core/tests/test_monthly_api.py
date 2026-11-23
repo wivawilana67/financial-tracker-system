@@ -117,3 +117,13 @@ def test_simulation_takes_what_if_amounts(client):
     res = client.get(f'/api/simulation?month={NOV}&income=12000000').json()
     assert res['income'] == '12000000.00'
     assert res['remaining'] == '12000000.00'
+
+
+@pytest.mark.django_db
+def test_candidates_list_the_source_month_with_their_uids(client):
+    LedgerEntry.objects.create(ledger='saving', month=date(2026, 10, 1), list_name='S (sample)', type_name='x',
+                               amount=Decimal('1000'), channel='Cash')
+    body = client.get(f'/api/rollover/candidates?month={NOV}').json()
+    assert body['source'] == '2026-10-01'
+    (item,) = body['candidates']
+    assert item['uid'] == 'saving|S (sample)|x|Cash' and item['amount'] == '1000.00'

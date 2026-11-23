@@ -67,7 +67,84 @@ export interface DashboardResponse {
   current_remaining: string;
 }
 
+export interface LedgerRow {
+  id: number;
+  version: number;
+  ledger: string;
+  list: string;
+  type: string;
+  amount: string;
+  channel: string;
+  cicilan: boolean;
+  remaining: number | null;
+  paid: boolean;
+}
+
+export interface IncomeRow {
+  id: number;
+  version: number;
+  person: string;
+  category: string;
+  amount: string;
+}
+
+export interface LedgerResponse {
+  month: string;
+  rows: LedgerRow[];
+  income: IncomeRow[];
+}
+
+export interface Candidate {
+  uid: string;
+  ledger: string;
+  list: string;
+  type: string;
+  channel: string;
+  amount: string;
+  cicilan: boolean;
+  remaining_after: number | null;
+}
+
+export interface ChangeResult {
+  updated: number;
+  deleted: number;
+  added: number;
+  skipped: string[];
+  jajan_adjusted: string[];
+}
+
+export interface RolloverPlan {
+  month: string;
+  summary: Record<string, { updated: number; inserted: number }>;
+  autodeduct_totals: Record<string, string>;
+  jajan_net: Record<string, string>;
+  written?: { updated: number; inserted: number };
+}
+
+export interface RolloverBody {
+  month: string;
+  selected: string[];
+  overrides: Record<string, string>;
+  income: { person: string; category: string; amount: string }[];
+  jajan_base: { Wiva: string; Jane: string };
+  jajan_rates: { pool: number; wiva: number; jane: number };
+  wiva_channel: string;
+  jane_channel: string;
+}
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  return request<T>(path, { method: 'POST', body: JSON.stringify(body) });
+}
+
 export const api = {
+  ledger: (month: string, ledger?: string) =>
+    request<LedgerResponse>(`ledger?month=${encodeURIComponent(month)}${ledger ? `&ledger=${ledger}` : ''}`),
+  saveChanges: (body: unknown) => post<ChangeResult>('monthly/changes', body),
+  markPaid: (body: unknown) => post<{ marked: number }>('monthly/paid', body),
+  candidates: (month: string) => request<{ source: string; candidates: Candidate[] }>(
+    `rollover/candidates?month=${encodeURIComponent(month)}`),
+  rolloverPreview: (body: RolloverBody) => post<RolloverPlan>('rollover/preview', body),
+  rolloverApply: (body: RolloverBody) => post<RolloverPlan>('rollover/apply', body),
   session: () => request<Session>('session'),
   healthDb: () => request<{ status: string; database: string }>('health/db'),
   dashboard: (month: string) => request<DashboardResponse>(`dashboard?month=${encodeURIComponent(month)}`),

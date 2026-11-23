@@ -11,6 +11,7 @@ urlpatterns = [
     path('ledger', views_monthly.ledger_rows, name='ledger'),
     path('monthly/changes', views_monthly.apply_changes, name='monthly-changes'),
     path('monthly/paid', views_monthly.mark_paid, name='monthly-paid'),
+    path('rollover/candidates', views_monthly.rollover_candidates, name='rollover-candidates'),
     path('rollover/preview', views_monthly.rollover_preview, name='rollover-preview'),
     path('rollover/apply', views_monthly.rollover_apply, name='rollover-apply'),
 ]

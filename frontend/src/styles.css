@@ -69,3 +69,27 @@ h2 { font-size: 1.15rem; margin: 0; }
 .ledger-foot { font-variant-numeric: tabular-nums; }
 .note-foot { font-size: .85rem; margin-top: 12px; }
 @media (prefers-reduced-motion: reduce) { .bar-fill { transition: none; } }
+
+/* Monthly Data and rollover */
+.monthly, .rollover { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.tab { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+.tab.on { background: var(--accent); color: #fff; }
+.table-wrap, table.grid { display: block; overflow-x: auto; }
+table.grid { border-collapse: collapse; width: 100%; font-size: .92rem; }
+table.grid th, table.grid td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.grid th { color: var(--muted); font-weight: 600; }
+table.grid input[type="text"], table.grid input:not([type]) { font: inherit; width: 100%; min-width: 80px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.num input { text-align: right; }
+tr.gone td { opacity: .45; text-decoration: line-through; }
+.add-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.add-row input { font: inherit; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); min-width: 0; flex: 1 1 120px; }
+.savebar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 14px 0; }
+.savebar button:disabled { opacity: .5; cursor: not-allowed; }
+.report { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+.report ul.warn { color: var(--warn); margin: 6px 0 0; padding-left: 18px; }
+.jajan-inputs { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); border: 1px solid var(--line); border-radius: 10px; margin: 12px 0; }
+.jajan-inputs label { display: grid; gap: 4px; color: var(--muted); font-size: .88rem; }
+.jajan-inputs input { font: inherit; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.small { font-size: .85rem; }

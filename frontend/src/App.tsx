@@ -4,6 +4,8 @@ import { api, envMismatch, onUnauthorized, type Session } from './api';
 import { initAuth, promptSignIn, renderSignInButton, signOut } from './auth';
 import { APP_ENV, GOOGLE_CLIENT_ID, IS_PROD } from './config';
 import Dashboard from './Dashboard';
+import MonthlyData from './MonthlyData';
+import Rollover from './Rollover';
 
 type View =
   | { kind: 'starting' }
@@ -104,6 +106,8 @@ export default function App() {
             </div>
             {dbStatus && <p className="muted" aria-live="polite">{dbStatus}</p>}
             <Dashboard initialMonth={view.session.month} />
+            <MonthlyData initialMonth={view.session.month} />
+            <Rollover sessionMonth={view.session.month} />
           </>
         )}
       </main>

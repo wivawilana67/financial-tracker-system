@@ -6,7 +6,7 @@ stale edit is reported in `skipped`, never applied.
 """
 
 import logging
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
 from rest_framework import status
@@ -176,3 +176,24 @@ def rollover_apply(request):
     plan = build_plan(_rollover_request(request.data))
     counts = apply_plan(plan)
     return Response({**_plan_json(plan), 'written': counts}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def rollover_candidates(request):
+    """The rows last month's generation would offer, with what each would write for the target month."""
+    target = _month(request.query_params.get('month'))
+    source = (target - timedelta(days=1)).replace(day=1)
+    rows = [ro.Row(m.ledger, m.month, m.list_name, m.type_name, m.amount, m.channel,
+                   m.is_installment, m.payments_remaining, m.paid)
+            for m in LedgerEntry.objects.filter(month__lte=target)]
+    offered = []
+    for ledger in ('autodeduct', 'saving', 'expense', 'ibadah'):
+        for candidate in ro.collect_candidates(rows, ledger, source, target):
+            written = ro.to_target_row(candidate, target, candidate.amount)
+            offered.append({
+                'uid': candidate.uid, 'ledger': ledger, 'list': candidate.list_name,
+                'type': candidate.type_name, 'channel': candidate.channel,
+                'amount': _money(candidate.amount), 'cicilan': candidate.is_installment,
+                'remaining_after': written.remaining,
+            })
+    return Response({'month': target.isoformat(), 'source': source.isoformat(), 'candidates': offered})
