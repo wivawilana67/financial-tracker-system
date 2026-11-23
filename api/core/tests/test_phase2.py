@@ -11,13 +11,13 @@ from django.db import IntegrityError, transaction
 
 from core import fakedata, importers
 from core.fingerprint import KEY_SEPARATOR, cc_fingerprint
-from core.models import CcTransaction, IncomeEntry, Ledger, LedgerEntry
+from core.models import CcTransaction, IncomeEntry, Ledger, LedgerEntry, WalletEntry
 from core.money import parse_idr
 
 JAKARTA = ZoneInfo('Asia/Jakarta')
 
-LEDGER_CSV_HEADER = 'Date,List,Type,Amount,Note/Channel,Cicilan?,Payment Remaining,Sudah Bayar?\n'
-INCOME_CSV_HEADER = 'Date,Person,Category,Amount\n'
+LEDGER_CSV_HEADER = 'Month,List,Type,Amount,Payment Channel,Cicilan?,Payment Remaining,Sudah Bayar?\n'
+INCOME_CSV_HEADER = 'Month,List,Type,Amount\n'
 CC_CSV_HEADER = 'Datetime,Bank,Card Number,Description,Type,Amount,Currency Code\n'
 
 
@@ -120,7 +120,7 @@ def test_ledger_import_skips_blank_lines():
 
 def test_missing_column_stops_the_import():
     with pytest.raises(ValueError, match='missing column'):
-        importers.read_ledger_csv(io.StringIO('Date,List\n2026-11-01,x\n'), Ledger.SAVING)
+        importers.read_ledger_csv(io.StringIO('Month,List\n2026-11-01,x\n'), Ledger.SAVING)
 
 
 def test_empty_file_is_refused():
@@ -152,6 +152,7 @@ def test_income_import():
     csv = INCOME_CSV_HEADER + '2026-11-01,Wiva,Salary (sample),10.000.000\n'
     report = importers.read_income_csv(io.StringIO(csv))
     assert report.rows[0].amount == Decimal('10000000')
+    assert (report.rows[0].person, report.rows[0].category) == ('Wiva', 'Salary (sample)')
 
 
 @pytest.mark.django_db
@@ -270,3 +271,60 @@ def test_replace_keeps_old_rows_when_the_reload_fails():
     with pytest.raises(IntegrityError):
         importers.save(report, replace=True)
     assert LedgerEntry.objects.get().list_name == 'Old (sample)'
+
+
+def test_income_rejects_an_unknown_person():
+    csv = INCOME_CSV_HEADER + '2026-11-01,Someone,Salary (sample),1.000\n'
+    report = importers.read_income_csv(io.StringIO(csv))
+    assert report.errors and 'unknown person' in report.errors[0][1]
+
+
+def test_autodeduct_owner_column_named_who_is_accepted():
+    csv = 'Month,List,Who?,Amount,Payment Channel,Cicilan?,Payment Remaining,Sudah Bayar?\n' \
+          '2026-11-01,Jajan share (sample),Wiva,220.000,Cash,FALSE,,FALSE\n'
+    report = importers.read_ledger_csv(io.StringIO(csv), Ledger.AUTODEDUCT)
+    assert report.rows[0].type_name == 'Wiva'
+
+
+def test_older_note_channel_header_is_still_accepted():
+    csv = 'Date,List,Type,Amount,Note/Channel,Cicilan?,Payment Remaining,Sudah Bayar?\n' \
+          '2026-11-01,Old (sample),Needs,1.000,Cash,FALSE,,FALSE\n'
+    assert importers.read_ledger_csv(io.StringIO(csv), Ledger.SAVING).rows[0].channel == 'Cash'
+
+
+WALLET_PREFIX = ''.join(f'row{i},,,\n' for i in range(1, 15))  # 14 summary rows above the header
+
+
+def wallet_csv(*data_rows):
+    ticks = ','.join(str(n) for n in range(1, 25))
+    header = f'Date,List Usage,Price,Account,Income?,Sudah Bayar?,Cicil / Not,Bulan,Sisa Bulan,' \
+             f'Sudah Bayar Cicilan,Cicilan per Bulan,Bayar ke?,{ticks}\n'
+    return WALLET_PREFIX + header + ''.join(data_rows)
+
+
+def test_wallet_import_reads_installment_ticks():
+    ticks = ','.join(['TRUE'] * 3 + ['FALSE'] * 21)
+    csv = wallet_csv(f'2026-11-05,Sample gadget (sample),"450.000",Sample Bank,FALSE,FALSE,Cicil,6,,,,,{ticks}\n')
+    report = importers.read_wallet_csv(io.StringIO(csv))
+    row = report.rows[0]
+    assert report.errors == []
+    assert (row.price, row.is_installment, row.months_total) == (Decimal('450000'), True, 6)
+    assert row.ticks[:3] == [True, True, True] and len(row.ticks) == 24
+
+
+def test_wallet_import_reports_a_bad_price():
+    ticks = ','.join(['FALSE'] * 24)
+    report = importers.read_wallet_csv(io.StringIO(wallet_csv(f'2026-11-05,x,abc,Bank,FALSE,FALSE,,,,,,,{ticks}\n')))
+    assert report.errors and report.errors[0][0] == 16
+
+
+@pytest.mark.django_db
+def test_wallet_second_import_needs_replace():
+    ticks = ','.join(['FALSE'] * 24)
+    csv = wallet_csv(f'2026-11-05,x (sample),10.000,Bank,FALSE,FALSE,,,,,,,{ticks}\n')
+    importers.save(importers.read_wallet_csv(io.StringIO(csv)))
+    with pytest.raises(ValueError, match='already exist'):
+        importers.save(importers.read_wallet_csv(io.StringIO(csv)))
+    report = importers.save(importers.read_wallet_csv(io.StringIO(csv)), replace=True)
+    assert report.replaced == 1
+    assert WalletEntry.objects.count() == 1

@@ -91,24 +91,36 @@ Every name carries "(sample)" or starts with "SAMPLE". The command refuses to ru
 
 ### Importing a Sheet tab
 
-Export a tab from Google Sheets (**File → Download → Comma-separated values (.csv)**) and run:
+Export a tab from Google Sheets (**File → Download → Comma-separated values (.csv)**), copy the file
+into the API container, and run:
 
 ```bash
 docker compose exec api python manage.py import_sheet_csv ledger /path/in/container.csv --ledger expense
 docker compose exec api python manage.py import_sheet_csv income /path/in/container.csv
 docker compose exec api python manage.py import_sheet_csv cc /path/in/container.csv --inbox INBOX_LABEL
+docker compose exec api python manage.py import_sheet_csv wallet /path/in/container.csv
 ```
 
+The headers are the Sheet's own, as of 2026-11-23:
+
+| Tab | Columns the importer reads |
+| --- | --- |
+| Saving, Expense, Ibadah | `Month`, `List`, `Type`, `Amount`, `Payment Channel`, `Cicilan?`, `Payment Remaining`, `Sudah Bayar?` |
+| Autodeduct Jajan | same, but the owner is in `Who?` |
+| Income | `Month`, `List` (the person), `Type` (the category), `Amount` |
+| CC Transaction | `Datetime`, `Bank`, `Card Number`, `Description`, `Type`, `Amount`, `Currency Code` |
+| Blu Balance | `Date`, `List Usage`, `Price`, `Account`, `Income?`, `Sudah Bayar?`, `Cicil / Not`, `Bulan`, and tick columns `1`–`24`. The export starts at the top of the tab; the importer skips the summary rows above the header (row 15). |
+
+Derived columns (for example `Sisa Bulan`, `Sudah Bayar Cicilan`, the Dashboard formulas) are not
+stored; the app computes them.
+
 * Without `--commit` the command only checks the file and prints what it found.
-* Columns are matched by header name, so the order doesn't matter. The headers must be the Sheet's
-  own (for example `Note/Channel`, `Sudah Bayar?`).
 * A bad row stops the import, and the message gives its line number. Nothing is written.
-* A ledger or income import refuses months that already hold rows. Add `--replace` to clear and
-  reload just those months (it's all or nothing).
+* Ledger and income imports refuse months that already hold rows. Add `--replace` to clear and
+  reload just those months (all or nothing). The wallet table is refused if it already has rows.
 * CC rows are deduplicated with the same fingerprint as the Sheet's CC Sync, so importing the
   same file twice is safe.
-
-The Wallet (Blu Balance) tab is not imported yet; it needs its own model.
+* Income people must be `Wiva` or `Jane`.
 
 ### Admin
 

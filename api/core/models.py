@@ -75,6 +75,27 @@ class IncomeEntry(models.Model):
         return f'{self.month:%Y-%m} {self.person} {self.category} {self.amount}'
 
 
+class WalletEntry(models.Model):
+    """One row of the Blu Balance tab. Totals and remaining counts are computed by the app, not stored."""
+
+    date = models.DateField(null=True, blank=True)
+    list_usage = models.CharField('list usage', max_length=200)
+    price = models.DecimalField(max_digits=16, decimal_places=2)
+    account = models.CharField(max_length=120, blank=True)
+    is_income = models.BooleanField('income?', default=False)
+    paid = models.BooleanField('sudah bayar?', default=False)
+    is_installment = models.BooleanField('cicil?', default=False)
+    months_total = models.PositiveIntegerField('bulan', null=True, blank=True)
+    # The 24 tick boxes (columns 1..24): ticks[0] is installment 1, and so on.
+    ticks = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        ordering = ['date', 'id']
+
+    def __str__(self):
+        return f'{self.date or "-"} {self.list_usage} {self.price}'
+
+
 class CcTransaction(models.Model):
     """Every card transaction synced from the bank emails (the permanent CC Transaction log)."""
 

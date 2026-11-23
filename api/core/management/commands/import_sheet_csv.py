@@ -2,6 +2,7 @@
 
 Dry run by default: it reads and checks the file, prints what it found, and writes nothing.
 Add --commit to save. Export each tab from Google Sheets as CSV (File → Download → CSV).
+The wallet export is the whole Blu Balance tab; the importer skips its summary rows above the header.
 """
 
 from pathlib import Path
@@ -9,14 +10,14 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 
 from core import importers
-from core.models import Ledger
+from core.models import Ledger, WalletEntry
 
 
 class Command(BaseCommand):
     help = 'Imports one Sheet tab exported as CSV. Dry run unless --commit is given.'
 
     def add_arguments(self, parser):
-        parser.add_argument('kind', choices=['ledger', 'income', 'cc'])
+        parser.add_argument('kind', choices=['ledger', 'income', 'cc', 'wallet'])
         parser.add_argument('file', help='Path to the CSV file.')
         parser.add_argument('--ledger', choices=[c for c, _ in Ledger.choices],
                             help='Required for kind=ledger: saving, expense, ibadah or autodeduct.')
@@ -38,6 +39,8 @@ class Command(BaseCommand):
                     report = importers.read_ledger_csv(handle, options['ledger'])
                 elif options['kind'] == 'income':
                     report = importers.read_income_csv(handle)
+                elif options['kind'] == 'wallet':
+                    report = importers.read_wallet_csv(handle)
                 else:
                     report = importers.read_cc_csv(handle, inbox=options['inbox'])
             except ValueError as err:
@@ -54,6 +57,8 @@ class Command(BaseCommand):
             if options['kind'] == 'cc':
                 importers.drop_known_cc_duplicates(report)
             existing = importers.existing_rows_for(report)
+            if report.rows and type(report.rows[0]).__name__ == 'WalletEntry':
+                existing = WalletEntry.objects.all()
             if existing is not None and existing.exists():
                 self.stdout.write(f'Note: {existing.count()} row(s) already exist for these months. '
                                   'A commit needs --replace.')
