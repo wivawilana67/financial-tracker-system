@@ -35,7 +35,8 @@ numbers, account emails, URLs of deployed services or financial figures here.
 ## Environments
 
 - **D6. Two environments, `dev` and `prod`.**
-  One Google Cloud/Firebase project each (`<app>-dev`, `<app>-prod`) on the same billing account
+  One Google Cloud/Firebase project each (`financial-tracker-system-dev`,
+  `financial-tracker-system-prod`) on the same billing account
   as Foodies. `develop` deploys to dev; `master` deploys to prod, through a PR as today.
   Reason: same split as today's TEST/PROD, with names that match the Foodies pattern.
 - **D7. Fully separate from Foodies: own Google Cloud projects, own Neon project.**
@@ -47,8 +48,8 @@ numbers, account emails, URLs of deployed services or financial figures here.
 
 ## Data
 
-- **D9. Neon Postgres in AWS `ap-southeast-1`, branches `prod` and `dev`, one login role each,
-  pooled connection string.**
+- **D9. Neon project `financial-tracker-system` in AWS `ap-southeast-1`, branches `prod` and `dev`,
+  database `financial_tracker`, one login role each (`app_prod`, `app_dev`), pooled connection string.**
   Reason: next to Cloud Run; the pooler suits Cloud Run's short-lived instances.
 - **D10. Import all history: every ledger row, Income, CC Transaction and Blu Balance.**
 - **D11. Money is stored as `Decimal`, never as a float.**
@@ -122,15 +123,25 @@ numbers, account emails, URLs of deployed services or financial figures here.
   opened.**
   This replaces today's row signature guard.
 
+## Naming
+
+- **D30. Cloud resources are named after the repo.** Google Cloud/Firebase projects
+  `financial-tracker-system-dev` / `-prod` (if an ID is taken, Google adds a suffix; the deploy
+  workflow reads the ID from a GitHub variable, so any ID works). Artifact Registry repository
+  `financial-tracker-system`, Cloud Run service `financial-tracker-system-api`, migrate job
+  `financial-tracker-system-migrate`, Neon project `financial-tracker-system`, database
+  `financial_tracker` (underscore: Postgres names can't hold a hyphen without quoting).
+
 ## Cutover and repository
 
 - **D27. One-day freeze for the switch.**
   Stop editing the Sheet, run the final import, reconcile counts and totals, switch both phones,
   then make the Sheet view-only.
 - **D28. New code goes in `api/` and `frontend/`, next to the Apps Script files, until cutover.**
-  `.claspignore` has to exclude both folders explicitly. Its `!*.js` rule may match nested files,
-  such as a Vite config. At retirement, remove the Apps Script files, `web/`, `scripts/` and the
-  clasp configs, and rewrite `README.md` and `CLAUDE.md`.
+  `.claspignore` needs no change: its `!*.js` rule only matches files at the root. Checked on
+  2026-11-22 by running clasp 3.3.0's own matcher over the repo; it keeps only the root Apps
+  Script files. At retirement, remove the Apps Script files, `web/`, `scripts/` and the clasp
+  configs, and rewrite `README.md` and `CLAUDE.md`.
 - **D29. The repo goes private at the end.**
   GitHub Free has no environments for private repos, so the deploy variables move to repository
   level, and the branch lock stays in the Workload Identity provider condition.

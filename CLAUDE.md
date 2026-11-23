@@ -65,5 +65,6 @@ The project-specific identity, runtime environments, folder layouts, business lo
 - `web/`: the phone PWA (vanilla ES modules, no build step), published to GitHub Pages. `web/` must never call `google.script.run`; it talks to the web app over HTTP only.
 - `web/config.js` decides test vs prod from the URL (`/test/` is TEST).
 - `scripts/`: local tooling (the deploy helper behind `npm run push-test`, `push-prod`, `pull-test` and `pull-prod`).
-- `.github/`: the Pages workflow and Dependabot config.
+- `.github/`: the Pages workflow, the new stack's CI and deploy workflows, and Dependabot config.
+- `api/` (Django) and `frontend/` (React PWA): the new stack, migration in progress (see `docs/decisions.md` and the README's "New stack" section). Their dependencies live only in their own folder (`api/.venv` via uv, `frontend/node_modules` via npm). They deploy through GitHub Actions (`develop` → dev, `master` → prod), not clasp; rule 12's `npm run push-test` applies to the root Apps Script files only. Run their tests (`uv run pytest` in `api/`, `npm test && npm run build` in `frontend/`) after every change.
 - The root Apps Script files must never be moved into subfolders, because clasp turns folder paths into file names and the by-name dialog lookups would break.

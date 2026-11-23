@@ -1,0 +1,136 @@
+# Deploys the new stack to Google Cloud.
+#   develop -> GitHub environment "dev"  -> the dev project
+#   master  -> GitHub environment "prod" -> the prod project
+#
+# Off until the repository variable CLOUD_DEPLOY is "on". Each environment holds these
+# variables (not secrets, and never committed): GCP_PROJECT_ID, GCP_REGION, DEPLOYER_SA,
+# WIF_PROVIDER, VITE_GOOGLE_CLIENT_ID.
+#
+# Google logs GitHub in through Workload Identity Federation: no key file exists. The
+# provider's condition only accepts this repository and the environment's own branch.
+#
+# Order: test inside the image -> push image -> run migrations -> deploy Cloud Run -> deploy
+# Firebase Hosting. Hosting goes last because its /api rewrite needs the service to exist.
+
+name: Deploy
+
+on:
+  push:
+    branches: [develop, master]
+    paths:
+      - 'api/**'
+      - 'frontend/**'
+      - 'firebase.json'
+      - '.github/firebase/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to Google Cloud
+    if: vars.CLOUD_DEPLOY == 'on' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ github.ref == 'refs/heads/master' && 'prod' || 'dev' }}
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: read   # check out the code
+      id-token: write  # ask GitHub for the OIDC token that Workload Identity Federation exchanges
+    env:
+      APP_ENV: ${{ github.ref == 'refs/heads/master' && 'prod' || 'dev' }}
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION }}
+      GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+      SERVICE: financial-tracker-system-api
+      MIGRATE_JOB: financial-tracker-system-migrate
+      RUNTIME_SA: api-runtime@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+      SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the environment's variables
+        run: |
+          set -euo pipefail
+          for name in PROJECT_ID REGION GOOGLE_CLIENT_ID; do
+            if [ -z "${!name}" ]; then echo "::error::$name is empty in this GitHub environment"; exit 1; fi
+          done
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Test inside the image
+        run: docker build --target test api
+
+      - name: Build and push the image
+        run: |
+          set -euo pipefail
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/financial-tracker-system/api:$SHA"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build --target runtime --build-arg "APP_VERSION=$SHA" -t "$IMAGE" api
+          docker push "$IMAGE"
+
+      - name: Run database migrations
+        run: |
+          set -euo pipefail
+          gcloud run jobs deploy "$MIGRATE_JOB" --project="$PROJECT_ID" --region="$REGION" \
+            --image="$IMAGE" --service-account="$RUNTIME_SA" \
+            --command=python --args=manage.py,migrate,--noinput \
+            --set-env-vars="APP_ENV=$APP_ENV,GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID,APP_VERSION=$SHA" \
+            --set-secrets="DATABASE_URL=DATABASE_URL:latest,DJANGO_SECRET_KEY=DJANGO_SECRET_KEY:latest,ALLOWED_EMAILS=ALLOWED_EMAILS:latest" \
+            --max-retries=0 --task-timeout=300s --quiet
+          gcloud run jobs execute "$MIGRATE_JOB" --project="$PROJECT_ID" --region="$REGION" --wait
+
+      - name: Deploy the API to Cloud Run
+        run: |
+          set -euo pipefail
+          ORIGINS="https://$PROJECT_ID.web.app,https://$PROJECT_ID.firebaseapp.com"
+          gcloud run deploy "$SERVICE" --project="$PROJECT_ID" --region="$REGION" \
+            --image="$IMAGE" --service-account="$RUNTIME_SA" \
+            --allow-unauthenticated --min-instances=0 --max-instances=2 --memory=512Mi \
+            --set-env-vars="^@^APP_ENV=$APP_ENV@GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID@APP_VERSION=$SHA@DJANGO_CSRF_TRUSTED_ORIGINS=$ORIGINS" \
+            --set-secrets="DATABASE_URL=DATABASE_URL:latest,DJANGO_SECRET_KEY=DJANGO_SECRET_KEY:latest,ALLOWED_EMAILS=ALLOWED_EMAILS:latest" \
+            --quiet
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Build the web app
+        working-directory: frontend
+        env:
+          VITE_APP_ENV: ${{ env.APP_ENV }}
+          VITE_GOOGLE_CLIENT_ID: ${{ env.GOOGLE_CLIENT_ID }}
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+          npm run build
+
+      - name: Deploy Firebase Hosting
+        run: |
+          set -euo pipefail
+          npm ci --prefix .github/firebase --no-audit --no-fund
+          .github/firebase/node_modules/.bin/firebase deploy --only hosting --project "$PROJECT_ID" --non-interactive
+
+      - name: Check the API answers through Firebase
+        run: |
+          set -euo pipefail
+          for _ in 1 2 3 4 5; do
+            if curl -fsS "https://$PROJECT_ID.web.app/api/health" | grep -q "\"env\":\"$APP_ENV\""; then
+              echo "Health check passed"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::https://$PROJECT_ID.web.app/api/health did not answer for $APP_ENV"
+          exit 1

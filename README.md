@@ -428,6 +428,31 @@ Steps 4 to 6 are done in **both** projects: the real sheet's Apps Script project
 * **Front end** (`web/`): push to `develop` and the "Deploy web to GitHub Pages" workflow publishes it to `/test/`. Merge `develop` into `master` and it publishes to the root. Both builds are one GitHub Pages site.
 * **Pull a project back** into the local files: `npm run pull-test` or `npm run pull-prod`. Each copies that target's Script ID into `.clasp.json` and then runs `clasp pull`. This overwrites local files, so commit first.
 
+## New stack (migration in progress)
+
+The app is moving off Sheets and Apps Script to a React PWA on Firebase Hosting, a Django API on
+Cloud Run and Neon Postgres. The decisions and their reasons are in `docs/decisions.md`. Until the
+cutover, everything above keeps running unchanged. The new code lives in its own folders, and
+clasp never pushes them (`.claspignore` only lets root files through).
+
+| Path | What | Dependencies |
+| --- | --- | --- |
+| `api/` | Django + DRF API, Docker image ([api/README.md](api/README.md)) | uv, in `api/` only |
+| `frontend/` | React + TypeScript + Vite PWA ([frontend/README.md](frontend/README.md)) | npm, in `frontend/` only |
+| `docker-compose.yml` | Local Postgres + API + web app | Docker |
+| `firebase.json` | Hosting config; `/api/**` goes to the Cloud Run service `financial-tracker-system-api` | |
+| `.github/workflows/ci.yml` | Tests for `api/` and `frontend/` on every push and PR | |
+| `.github/workflows/deploy.yml` | `develop` → dev, `master` → prod; off until the repo variable `CLOUD_DEPLOY` is `on` | |
+| `.github/firebase/` | The pinned Firebase CLI the deploy workflow uses | npm, CI only |
+
+Local development: `cp .env.example .env`, fill in `GOOGLE_CLIENT_ID` and `ALLOWED_EMAILS`, then
+`docker compose up --build` and open http://localhost:5173.
+
+The new stack's environments are named `dev` and `prod`: Google Cloud/Firebase projects
+`financial-tracker-system-dev` and `financial-tracker-system-prod`, and the branches `dev` and `prod`
+of the Neon project `financial-tracker-system`. Changes to `api/` or `frontend/` are deployed by GitHub Actions, not by
+`npm run push-test`; that script stays for the Apps Script files only.
+
 ## Development Workflow & Rules
 
 1. **Two Environments**: TEST and PROD (see [Environments: TEST and PROD](#environments-test-and-prod)). Every development step lands on TEST first. PROD receives releases only. While developing, never run backend editor functions or pushes against PROD.
