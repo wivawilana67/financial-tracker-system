@@ -43,6 +43,9 @@ ALLOWED_EMAILS = frozenset(
 if IS_CLOUD and (not GOOGLE_CLIENT_ID or not ALLOWED_EMAILS):
     raise ImproperlyConfigured('GOOGLE_CLIENT_ID and ALLOWED_EMAILS are required on Cloud Run')
 
+# Django's own admin (username and password). Local only by default; set ENABLE_ADMIN=true to change.
+ENABLE_ADMIN = os.environ.get('ENABLE_ADMIN', 'false' if IS_CLOUD else 'true').lower() == 'true'
+
 # The commit the image was built from, shown by /api/health.
 APP_VERSION = os.environ.get('APP_VERSION', 'local')
 
@@ -113,9 +116,14 @@ USE_TZ = True
 # Served by WhiteNoise under /api/static/ so Firebase's /api/** rewrite reaches them.
 STATIC_URL = '/api/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Hashed file names are only built on Cloud Run, where collectstatic runs in the image.
+# Local runs and tests use the plain storage, so the admin works without a build step.
 STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage' if IS_CLOUD
+        else 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
 }
 
 REST_FRAMEWORK = {

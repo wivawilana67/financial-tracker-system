@@ -73,3 +73,45 @@ never serves traffic.
 One line per request on stdout (`core/middleware.py`): method, path, status, duration and the
 signed-in email. Query strings, bodies and headers are never logged. Unexpected exceptions are
 logged with their traceback and answered with `{"error": "Server error"}` (`core/errors.py`).
+
+## Data (phase 2)
+
+Models in `core/models.py` mirror the Sheet's columns: ledgers (`LedgerEntry`), income
+(`IncomeEntry`) and the card log (`CcTransaction`). Money is `Decimal`. Every month is stored as
+its first day, as the Sheet does.
+
+### Sample data (dev and local only)
+
+```bash
+docker compose exec api python manage.py seed_fake_data --months 3 --end 2026-11
+```
+
+Every name carries "(sample)" or starts with "SAMPLE". The command refuses to run when
+`APP_ENV=prod`. Running it twice adds nothing.
+
+### Importing a Sheet tab
+
+Export a tab from Google Sheets (**File → Download → Comma-separated values (.csv)**) and run:
+
+```bash
+docker compose exec api python manage.py import_sheet_csv ledger /path/in/container.csv --ledger expense
+docker compose exec api python manage.py import_sheet_csv income /path/in/container.csv
+docker compose exec api python manage.py import_sheet_csv cc /path/in/container.csv --inbox INBOX_LABEL
+```
+
+* Without `--commit` the command only checks the file and prints what it found.
+* Columns are matched by header name, so the order doesn't matter. The headers must be the Sheet's
+  own (for example `Note/Channel`, `Sudah Bayar?`).
+* A bad row stops the import, and the message gives its line number. Nothing is written.
+* A ledger or income import refuses months that already hold rows. Add `--replace` to clear and
+  reload just those months (it's all or nothing).
+* CC rows are deduplicated with the same fingerprint as the Sheet's CC Sync, so importing the
+  same file twice is safe.
+
+The Wallet (Blu Balance) tab is not imported yet; it needs its own model.
+
+### Admin
+
+Django's admin is at `/api/admin/` in local and dev only (`ENABLE_ADMIN`). It has its own
+username and password, so it is off on Cloud Run, where only Google sign-in opens the app.
+Create a local admin with `docker compose exec api python manage.py createsuperuser`.
