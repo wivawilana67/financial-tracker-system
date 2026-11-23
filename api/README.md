@@ -127,3 +127,17 @@ stored; the app computes them.
 Django's admin is at `/api/admin/` in local and dev only (`ENABLE_ADMIN`). It has its own
 username and password, so it is off on Cloud Run, where only Google sign-in opens the app.
 Create a local admin with `docker compose exec api python manage.py createsuperuser`.
+
+## Monthly rules (phase 3, in progress)
+
+Ported from `MonthlyGeneration.js` so far. Pure functions with no database access, so they can be
+tested on their own:
+
+* `core/rules/installments.py`: installment carry-forward. Reads only earlier months, uses the latest
+  state per item, drops finished installments, takes one payment off per month.
+* `core/rules/jajan.py`: jajan allocation. Gross share minus autodeductions, clamped at zero,
+  rounded half up to whole rupiah (the Sheet's `Math.round`). Exact decimals, so the rounding is
+  the only one.
+
+Still to port: the rollover merge (upsert and the target-month checks), the paid status rules, the
+Monthly Data edit guard, the simulation and the Dashboard totals.
