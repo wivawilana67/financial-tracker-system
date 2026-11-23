@@ -147,5 +147,16 @@ tested on their own:
   `apply_plan()` is called, in one transaction. Updated rows get `version + 1`; untouched rows are not
   written. A dry run is `build_plan()` alone.
 
-Not ported yet: the target-month edits made before the rollover (the Monthly Data tab), the paid-status
-rules, the simulation and the Dashboard totals.
+* `core/rules/monthly.py` and `core/monthly_service.py`:
+  * Monthly Data edits: each change carries the row's version. A stale version is skipped and reported,
+    never overwritten. Autodeduction changes move the owner's Expense Jajan row by the same amount, never
+    below zero. No Jajan row means a note, never a new row.
+  * Target-month edits go through `apply_changes()` before a generation run, so the rollover sees them.
+  * Paid marks: unpaid rows of the ticked channels, or of the ticked List + Type + Channel rows.
+  * Simulation: the remaining formula and the net-jajan rule, as pure functions. The database
+    payload for the simulation screen is not built yet.
+  * Dashboard totals. Some formulas were read from the Sheet's cell formulas and are marked INFERRED
+    in the code. They are checked against the real Sheet during the trial import (phase 7).
+
+Not ported yet: the simulation's database payload (the screen's baseline), and the phone endpoints for
+these services (phase 3 and 5 wiring).
