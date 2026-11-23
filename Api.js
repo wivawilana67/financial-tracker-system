@@ -16,11 +16,12 @@ var API_MAX_ITEMS = 500;
 var API_CC_SYNC_MAX_DAYS = 62;
 
 /**
- * Public probe. Reveals only the OAuth client id, which the phone needs to sign in.
+ * Public probe. Reveals only the OAuth client id, which the phone needs to sign in,
+ * and the environment name ('test', 'prod' or '' when unset). Neither is secret.
  * @return {TextOutput} JSON.
  */
 function doGet() {
-  return apiJson_({ ok: true, clientId: getApiProp_(API_PROPS.clientId) });
+  return apiJson_({ ok: true, clientId: getApiProp_(API_PROPS.clientId), env: getAppEnv_() });
 }
 
 /**
@@ -119,7 +120,7 @@ function requireItems_(value) {
  */
 var API_ACTIONS = {
   session: function (body, email) {
-    return { email: email, persons: INCOME_PERSONS, month: currentMonthKey() };
+    return { email: email, persons: INCOME_PERSONS, month: currentMonthKey(), env: getAppEnv_() };
   },
 
   month: function (body) {

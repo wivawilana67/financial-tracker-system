@@ -1,8 +1,21 @@
+# Deploy web to GitHub Pages: one Pages site, two builds.
+#
+#   master  -> site root    https://wivawilana67.github.io/financial-tracker-system/       (PROD)
+#   develop -> site /test/  https://wivawilana67.github.io/financial-tracker-system/test/  (TEST)
+#
+# Every run checks out both branches and assembles the whole site, so a push to
+# either branch never removes the other build. The test build's manifest is
+# renamed to "Finance TEST" so it installs next to the prod app.
+#
+# Both branches must be allowed to deploy:
+#   Settings -> Environments -> github-pages -> Deployment branches: add master and develop.
+#   Settings -> Pages -> Source: GitHub Actions.
+
 name: Deploy web to GitHub Pages
 
 on:
   push:
-    branches: [master]
+    branches: [master, develop]
     paths:
       - 'web/**'
       - '.github/workflows/pages.yml'
@@ -18,14 +31,34 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: master
+          path: prod
           persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: develop
+          path: test
+          persist-credentials: false
+      - name: Assemble site (prod at root, test under /test/)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/test
+          cp -R prod/web/. site/
+          cp -R test/web/. site/test/
+          sed -i \
+            -e 's/"name": "Financial Tracker"/"name": "Financial Tracker (TEST)"/' \
+            -e 's/"short_name": "Finance"/"short_name": "Finance TEST"/' \
+            site/test/manifest.webmanifest
+          grep -q '"name": "Financial Tracker (TEST)"' site/test/manifest.webmanifest
+          grep -q '"short_name": "Finance TEST"' site/test/manifest.webmanifest
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: web
+          path: site
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

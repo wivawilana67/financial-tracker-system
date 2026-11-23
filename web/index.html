@@ -18,6 +18,7 @@
   <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
+  <div id="env-banner" class="env-banner" hidden>TEST — test sheet, not your real data</div>
   <header class="topbar">
     <h1>Financial Tracker</h1>
     <div class="topbar-actions">
@@ -47,6 +48,7 @@
       <p class="muted">Sign in with the Google account that can open the household sheet. Financial data loads only after sign-in and is never saved on this phone.</p>
       <div id="gsi-button" class="gsi-slot"></div>
       <p id="signin-status" class="status" role="status"></p>
+      <button id="signin-settings-btn" type="button" class="link">Change backend</button>
     </section>
 
     <section id="view-cc" class="view" hidden>
@@ -138,6 +140,7 @@
       <h2>Settings</h2>
       <div class="card stack">
         <p class="account">Signed in as <strong id="account-email"></strong></p>
+        <p class="account small muted">Environment: <strong id="env-label"></strong></p>
         <button id="sign-out" type="button" class="btn danger">Sign out</button>
       </div>
       <form id="settings-form" class="card stack">

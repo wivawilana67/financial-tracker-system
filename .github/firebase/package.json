@@ -1,0 +1,8 @@
+{
+  "name": "fintrack-deploy-tools",
+  "private": true,
+  "description": "Pinned Firebase CLI for the deploy workflow. npm ci checks it against package-lock.json.",
+  "devDependencies": {
+    "firebase-tools": "15.37.0"
+  }
+}

@@ -7,7 +7,7 @@
  * the count passes AUTH_FAIL_LIMIT. Secrets and tokens are never logged.
  */
 
-var API_PROPS = { token: 'API_TOKEN', clientId: 'GOOGLE_CLIENT_ID', emails: 'ALLOWED_EMAILS' };
+var API_PROPS = { token: 'API_TOKEN', clientId: 'GOOGLE_CLIENT_ID', emails: 'ALLOWED_EMAILS', env: 'APP_ENV' };
 var AUTH_FAIL_LIMIT = 20;          // failed calls ...
 var AUTH_FAIL_WINDOW_SECONDS = 600; // ... within this window lock the API for the same window
 var AUTH_FAIL_KEY = 'auth:fails';
@@ -80,6 +80,12 @@ function getAllowedEmails_() {
       .filter(function (e) { return e !== ''; });
 }
 
+/** @return {string} 'test' or 'prod' from Script Property APP_ENV, or '' when unset/invalid. */
+function getAppEnv_() {
+  var env = getApiProp_(API_PROPS.env).trim().toLowerCase();
+  return env === 'test' || env === 'prod' ? env : '';
+}
+
 /**
  * Verifies a Google ID token with Google and checks it belongs to this app and an
  * allowed user. Verified tokens are cached until shortly before they expire.
@@ -136,7 +142,7 @@ function authorizeApi() {
   CacheService.getScriptCache();
   logInfo(context, 'Spreadsheet: ' + getBook_().getName());
 
-  var keys = [API_PROPS.token, API_PROPS.clientId, API_PROPS.emails, 'SPREADSHEET_ID'];
+  var keys = [API_PROPS.token, API_PROPS.clientId, API_PROPS.emails, 'SPREADSHEET_ID', 'APP_ENV'];
   keys.forEach(function (key) {
     logInfo(context, key + ': ' + (getApiProp_(key) ? 'set' : 'MISSING'));
   });

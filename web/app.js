@@ -1,12 +1,13 @@
 // Entry point: boot flow (setup, Google sign-in, session), the two tabs, settings, install button and Back handling.
 
-import { getSettings, saveSettings, fetchClientId, call, onUnauthorized } from './api.js';
-import { initAuth, promptSignIn, signOut } from './auth.js';
+import { getSettings, saveSettings, fetchClientId, call, onUnauthorized, envMismatch } from './api.js';
+import { initAuth, promptSignIn, signOut, clearIdToken } from './auth.js';
 import { $, showView, text, runAction } from './ui.js';
+import { ENV, IS_TEST, STORAGE_PREFIX } from './config.js';
 import * as cc from './cc.js';
 import * as home from './home.js';
 
-const TAB_KEY = 'fintrack.tab';
+const TAB_KEY = `${STORAGE_PREFIX}tab`;
 const TABS = ['cc', 'fin'];
 
 let session = null; // {email, persons, month}, kept in memory only
@@ -72,6 +73,13 @@ async function startSignIn() {
 async function onSignedIn() {
   const info = await runAction(null, () => call('session'));
   if (!info) return;
+  const mismatch = envMismatch(info.env);
+  if (mismatch) {
+    // Do not load any section from the wrong backend; the user fixes the URL in Settings.
+    clearIdToken();
+    showSignIn(mismatch);
+    return;
+  }
   session = info;
   $('account-email').textContent = text(info.email);
   setSignedInChrome(true);
@@ -100,8 +108,21 @@ function openSettings() {
 }
 
 function onPopState(event) {
-  if (!signedIn) return;
+  if (!signedIn) {
+    // Settings can be opened from the sign-in view, so Back returns there.
+    if (!$('view-settings').hidden) showView('signin');
+    return;
+  }
   showView(event.state?.view === 'settings' ? 'settings' : currentTab);
+}
+
+// Test copy: orange banner, title prefix and the environment label in Settings.
+function applyEnvironment() {
+  $('env-label').textContent = ENV.toUpperCase();
+  if (!IS_TEST) return;
+  document.title = `TEST · ${document.title}`;
+  document.body.classList.add('is-test');
+  $('env-banner').hidden = false;
 }
 
 function onSessionExpired() {
@@ -180,6 +201,8 @@ function init() {
     button.addEventListener('click', () => history.back());
   });
   $('settings-btn').addEventListener('click', openSettings);
+  $('signin-settings-btn').addEventListener('click', openSettings);
+  applyEnvironment();
   $('setup-form').addEventListener('submit', onSetupSubmit);
   $('settings-form').addEventListener('submit', onSettingsSubmit);
   $('sign-out').addEventListener('click', onSignOut);

@@ -3,7 +3,21 @@ node_modules/
 
 # Local-only IDs (this repo is public)
 .clasp.json
+.clasp-*.json
 .clasprc.json
 .deploy.json
 .claude/settings.local.json
 .claude/worktrees/
+
+# New stack (api/, frontend/)
+.env
+**/.venv/
+**/__pycache__/
+.pytest_cache/
+api/staticfiles/
+api/*.sqlite3
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+.firebaserc
+.firebase/

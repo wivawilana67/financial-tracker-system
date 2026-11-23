@@ -13,6 +13,9 @@
   --good: #137a3a;
   --bad: #b42318;
   --warn: #9a5b00;
+  --test: #ff8c00;
+  --test-text: #1c1300;
+  --env-h: 0px;
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
@@ -30,6 +33,8 @@
     --good: #4ade80;
     --bad: #f87171;
     --warn: #fbbf24;
+    --test: #ffa33a;
+    --test-text: #1c1300;
     --shadow: none;
   }
 }
@@ -46,6 +51,8 @@
   --good: #4ade80;
   --bad: #f87171;
   --warn: #fbbf24;
+  --test: #ffa33a;
+  --test-text: #1c1300;
   --shadow: none;
 }
 
@@ -81,7 +88,7 @@ h3.sub { margin: 16px 0 6px; font-size: 14px; color: var(--muted); }
 /* Top bar */
 .topbar {
   position: sticky;
-  top: 0;
+  top: var(--env-h);
   z-index: 5;
   display: flex;
   align-items: center;
@@ -93,6 +100,31 @@ h3.sub { margin: 16px 0 6px; font-size: 14px; color: var(--muted); }
   border-bottom: 1px solid var(--border);
 }
 .topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+/* Test copy only: fixed banner at the very top, below the notch; the page starts under it */
+.env-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  box-sizing: border-box;
+  height: calc(28px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--test);
+  color: var(--test-text);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+body.is-test {
+  --env-h: calc(28px + env(safe-area-inset-top));
+  padding-top: var(--env-h);
+}
+body.is-test .topbar { padding-top: 0; }
 
 /* Main content: 16px gutters, bottom padding clears the tab bar */
 main {

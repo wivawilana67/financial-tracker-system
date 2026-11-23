@@ -3,8 +3,9 @@
   "private": true,
   "description": "Google Apps Script project for the Financial Tracker System. Requires the global clasp CLI: npm install -g @google/clasp",
   "scripts": {
-    "push": "node scripts/push.js",
-    "push-code": "clasp push -f",
-    "pull": "clasp pull"
+    "push-test": "node scripts/push.js test",
+    "push-prod": "node scripts/push.js prod",
+    "pull-test": "node -e \"require('fs').copyFileSync('.clasp-test.json','.clasp.json')\" && clasp pull",
+    "pull-prod": "node -e \"require('fs').copyFileSync('.clasp-prod.json','.clasp.json')\" && clasp pull"
   }
 }
