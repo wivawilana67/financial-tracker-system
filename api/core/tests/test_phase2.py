@@ -9,7 +9,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
-from core import fakedata, importers
+from core import cc_tracker, fakedata, importers
 from core.fingerprint import KEY_SEPARATOR, cc_fingerprint
 from core.models import CcTransaction, IncomeEntry, Ledger, LedgerEntry, WalletEntry
 from core.money import parse_idr
@@ -328,3 +328,53 @@ def test_wallet_second_import_needs_replace():
     report = importers.save(importers.read_wallet_csv(io.StringIO(csv)), replace=True)
     assert report.replaced == 1
     assert WalletEntry.objects.count() == 1
+
+
+# --- CC Tracker tags, cleanup and filters -------------------------------------
+
+
+@pytest.mark.parametrize('text, expected', [
+    ('Cicilan', ('cicilan', False)),
+    ('bulanan', ('bulanan', False)),
+    ('Cancelled', ('', True)),
+    ('', ('', False)),
+])
+def test_tracker_tag_maps_to_kind_and_cancelled(text, expected):
+    assert cc_tracker.parse_tag(text) == expected
+
+
+def test_unknown_tracker_tag_is_refused():
+    with pytest.raises(ValueError):
+        cc_tracker.parse_tag('maybe')
+
+
+def _cc(description, **flags):
+    when = datetime(2026, 11, 20, 14, 0, tzinfo=JAKARTA)
+    fingerprint = cc_fingerprint(when, 'BCA', 'XXXX-1111', description, 'Purchase', Decimal('1000'), 'IDR')
+    return CcTransaction.objects.create(occurred_at=when, bank='BCA', card_masked='XXXX-1111',
+                                        description=description, type_name='Purchase', amount=Decimal('1000'),
+                                        inbox='test', fingerprint=fingerprint, **flags)
+
+
+@pytest.mark.django_db
+def test_cleanup_hides_paid_and_cancelled_without_deleting():
+    _cc('paid row (sample)', paid=True)
+    _cc('cancelled row (sample)', cancelled=True)
+    _cc('open row (sample)')
+    assert cc_tracker.archive_settled() == 2
+    assert CcTransaction.objects.count() == 3          # nothing deleted
+    assert cc_tracker.archive_settled() == 0            # running again changes nothing
+
+
+@pytest.mark.django_db
+def test_filters_show_all_paid_or_hidden():
+    _cc('paid row (sample)', paid=True)
+    _cc('cancelled row (sample)', cancelled=True)
+    _cc('open row (sample)')
+    cc_tracker.archive_settled()
+    everything = CcTransaction.objects.all()
+    assert cc_tracker.apply_filter(everything, 'all').count() == 3
+    assert [r.description for r in cc_tracker.apply_filter(everything, 'paid')] == ['paid row (sample)']
+    assert cc_tracker.apply_filter(everything, 'hidden').count() == 2
+    with pytest.raises(ValueError):
+        cc_tracker.apply_filter(everything, 'other')

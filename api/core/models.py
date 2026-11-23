@@ -109,11 +109,15 @@ class CcTransaction(models.Model):
     inbox = models.CharField(max_length=254, help_text='Which connected Gmail inbox the email came from.')
     # Hash of the seven columns above. A second sync of the same email adds nothing (see fingerprint.py).
     fingerprint = models.CharField(max_length=64, unique=True)
-    # CC Tracker checklist state, previously the H, I, J and K columns.
+    # CC Tracker checklist state: the H (select), I (paid), J (tag) and K (note) columns.
+    # J holds one tag: cicilan or bulanan says what the row is; cancelled marks it for removal.
     selected = models.BooleanField(default=False)
     paid = models.BooleanField(default=False)
+    kind = models.CharField(max_length=16, blank=True, choices=[('cicilan', 'Cicilan'), ('bulanan', 'Bulanan')])
     cancelled = models.BooleanField(default=False)
     note = models.CharField(max_length=500, blank=True)
+    # The cleanup hides paid and cancelled rows by setting this flag. Nothing is deleted.
+    archived = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['occurred_at', 'id']
