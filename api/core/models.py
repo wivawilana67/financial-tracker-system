@@ -118,6 +118,7 @@ class CcTransaction(models.Model):
     note = models.CharField(max_length=500, blank=True)
     # The cleanup hides paid and cancelled rows by setting this flag. Nothing is deleted.
     archived = models.BooleanField(default=False)
+    version = models.PositiveIntegerField(default=1)
 
     class Meta:
         ordering = ['occurred_at', 'id']

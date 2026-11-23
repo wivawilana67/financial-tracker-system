@@ -6,6 +6,7 @@ import { APP_ENV, GOOGLE_CLIENT_ID, IS_PROD } from './config';
 import Dashboard from './Dashboard';
 import MonthlyData from './MonthlyData';
 import Rollover from './Rollover';
+import CcTracker from './CcTracker';
 
 type View =
   | { kind: 'starting' }
@@ -108,6 +109,7 @@ export default function App() {
             <Dashboard initialMonth={view.session.month} />
             <MonthlyData initialMonth={view.session.month} />
             <Rollover sessionMonth={view.session.month} />
+            <CcTracker />
           </>
         )}
       </main>

@@ -136,7 +136,30 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return request<T>(path, { method: 'POST', body: JSON.stringify(body) });
 }
 
+export interface CcRow {
+  id: number;
+  datetime: string;
+  bank: string;
+  card: string;
+  description: string;
+  type: string;
+  amount: string;
+  currency: string;
+  inbox: string;
+  selected: boolean;
+  paid: boolean;
+  kind: '' | 'cicilan' | 'bulanan';
+  cancelled: boolean;
+  note: string;
+  archived: boolean;
+  version: number;
+}
+
 export const api = {
+  cc: (filter: string) => request<{ filter: string; rows: CcRow[] }>(`cc?filter=${encodeURIComponent(filter)}`),
+  ccUpdate: (rows: Partial<CcRow>[]) => post<{ updated: number; skipped: string[] }>('cc/update', { rows }),
+  ccCleanup: () => post<{ hidden: number }>('cc/cleanup', {}),
+  ccRestore: (id: number) => post<{ id: number; archived: boolean }>('cc/restore', { id }),
   ledger: (month: string, ledger?: string) =>
     request<LedgerResponse>(`ledger?month=${encodeURIComponent(month)}${ledger ? `&ledger=${ledger}` : ''}`),
   saveChanges: (body: unknown) => post<ChangeResult>('monthly/changes', body),

@@ -93,3 +93,15 @@ tr.gone td { opacity: .45; text-decoration: line-through; }
 .jajan-inputs label { display: grid; gap: 4px; color: var(--muted); font-size: .88rem; }
 .jajan-inputs input { font: inherit; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
 .small { font-size: .85rem; }
+
+/* CC Tracker */
+.cc { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+.cc-list { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10px; }
+.cc-card { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
+.cc-card.paid { border-left: 4px solid var(--good); }
+.cc-card.cancelled { border-left: 4px solid var(--bad); opacity: .75; }
+.cc-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+.cc-checks { display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 8px 0; font-size: .92rem; }
+.cc-checks label { display: inline-flex; gap: 4px; align-items: center; }
+.cc-checks select, .cc-note { font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.cc-note { width: 100%; }
