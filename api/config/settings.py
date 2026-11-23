@@ -46,6 +46,14 @@ if IS_CLOUD and (not GOOGLE_CLIENT_ID or not ALLOWED_EMAILS):
 # Django's own admin (username and password). Local only by default; set ENABLE_ADMIN=true to change.
 ENABLE_ADMIN = os.environ.get('ENABLE_ADMIN', 'false' if IS_CLOUD else 'true').lower() == 'true'
 
+# Gmail read access for the card sync. The client secret comes from Secret Manager at deploy time.
+GMAIL_CLIENT_ID = os.environ.get('GMAIL_CLIENT_ID', '').strip()
+GMAIL_CLIENT_SECRET = os.environ.get('GMAIL_CLIENT_SECRET', '').strip()
+GMAIL_REDIRECT_URI = os.environ.get('GMAIL_REDIRECT_URI', '').strip()
+GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID', '').strip()
+BACKUP_BUCKET = os.environ.get('BACKUP_BUCKET', '').strip()
+BACKUP_DIR = os.environ.get('BACKUP_DIR', str(BASE_DIR / 'backups'))
+
 # The commit the image was built from, shown by /api/health.
 APP_VERSION = os.environ.get('APP_VERSION', 'local')
 

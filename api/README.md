@@ -160,3 +160,32 @@ tested on their own:
 
 Not ported yet: the simulation's database payload (the screen's baseline), and the phone endpoints for
 these services (phase 3 and 5 wiring).
+
+## Card sync, nightly job and backup
+
+* **Card sync** (`core/cc_sync.py`, `core/cc_email.py`): reads the bank notification emails of each
+  connected inbox (read-only Gmail scope), parses them (BCA ported from `CcSync.js`) and stores each
+  transaction once, by fingerprint. Unreadable emails go to a list with the date and reason only.
+* **Gmail connection** (`core/gmail_auth.py`, `core/views_gmail.py`): each owner connects their own
+  inbox once. The refresh token is stored in its own Secret Manager secret (`gmail-refresh-<hash>`),
+  never in the database or the repo.
+* **Nightly job** (`manage.py nightly`): backup, yesterday's card sync, and on the 1st a draft of the
+  month's rollover. A draft is a summary; nothing is written to the ledgers. The job exits with status 1
+  if a step fails.
+* **Backup** (`core/backup.py`): every table as a gzipped Django fixture. Restore with
+  `python manage.py loaddata <file>`. On Cloud Run it goes to `BACKUP_BUCKET`; locally to `BACKUP_DIR`.
+
+### Owner setup for these (console steps, once per project)
+
+1. **Gmail OAuth client** (Google Auth Platform → Clients → Create client → Web application). Authorized
+   redirect URI: `https://<project>.web.app/api/gmail/callback`. Put the client ID in the GitHub
+   environment variable `GMAIL_CLIENT_ID`, and the client secret in Secret Manager as `GMAIL_CLIENT_SECRET`.
+2. **Consent screen**: add the scope `gmail.readonly`, and add both owners as test users. Decide the
+   publishing status (see decision D20) before relying on it for long.
+3. **Backup bucket** `<project>-backups` in `us-central1`, private, with a 30-day lifecycle rule.
+4. **Runtime permissions** for `api-runtime`: `roles/secretmanager.secretCreator`,
+   `roles/secretmanager.secretVersionAdder` and `roles/secretmanager.secretAccessor` (project), and
+   `roles/storage.objectCreator` on the backup bucket.
+5. **One Cloud Scheduler job** in prod, daily at 01:30 Asia/Jakarta, that starts the nightly job
+   (`financial-tracker-system-nightly`). The scheduler's service account needs `roles/run.invoker` on it.
+   Dev has no scheduler; run the job by hand with `gcloud run jobs execute`.

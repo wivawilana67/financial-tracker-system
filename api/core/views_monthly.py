@@ -149,8 +149,9 @@ def _rollover_request(body) -> GenerateRequest:
         overrides={k: _decimal(v, 'overrides') for k, v in body.get('overrides', {}).items()},
         income={(item['person'], item['category']): _decimal(item['amount'], 'income')
                 for item in body.get('income', [])},
-        jajan_base={'Wiva': _decimal(base.get('Wiva', 0), 'jajan_base'),
-                    'Jane': _decimal(base.get('Jane', 0), 'jajan_base')},
+        # Empty means "use the target month's Salary income" (see rollover_service._jajan_base).
+        jajan_base=({'Wiva': _decimal(base.get('Wiva', 0), 'jajan_base'),
+                     'Jane': _decimal(base.get('Jane', 0), 'jajan_base')} if base else {}),
         jajan_rates=JajanInput(Decimal(0), Decimal(0), _decimal(rates.get('pool', 10), 'pool'),
                                _decimal(rates.get('wiva', 50), 'wiva'), _decimal(rates.get('jane', 50), 'jane')),
         wiva_channel=body.get('wiva_channel', ''), jane_channel=body.get('jane_channel', ''),

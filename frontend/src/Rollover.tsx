@@ -18,7 +18,6 @@ export default function Rollover({ sessionMonth }: { sessionMonth: string }) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [overrides, setOverrides] = useState<Record<string, string>>({});
-  const [jajanBase, setJajanBase] = useState({ Wiva: '0', Jane: '0' });
   const [rates] = useState({ pool: 10, wiva: 50, jane: 50 });
   const [channels, setChannels] = useState({ wiva: 'Cash', jane: 'Cash' });
   const [preview, setPreview] = useState<{ key: string; plan: RolloverPlan } | null>(null);
@@ -45,11 +44,11 @@ export default function Rollover({ sessionMonth }: { sessionMonth: string }) {
     selected: [...selected],
     overrides: Object.fromEntries(Object.entries(overrides).filter(([, v]) => v.trim() !== '')),
     income: [],
-    jajan_base: jajanBase,
+    jajan_base: {} as RolloverBody['jajan_base'],
     jajan_rates: rates,
     wiva_channel: channels.wiva,
     jane_channel: channels.jane,
-  }), [target, selected, overrides, jajanBase, rates, channels]);
+  }), [target, selected, overrides, rates, channels]);
 
   const key = JSON.stringify(body);
   const previewIsCurrent = preview !== null && preview.key === key;
@@ -116,11 +115,8 @@ export default function Rollover({ sessionMonth }: { sessionMonth: string }) {
       </table>
 
       <fieldset className="jajan-inputs">
-        <legend>Jajan</legend>
-        <label>Wiva income in jajan categories<input inputMode="decimal" value={jajanBase.Wiva}
-          onChange={(e) => setJajanBase((j) => ({ ...j, Wiva: e.target.value }))} /></label>
-        <label>Jane income in jajan categories<input inputMode="decimal" value={jajanBase.Jane}
-          onChange={(e) => setJajanBase((j) => ({ ...j, Jane: e.target.value }))} /></label>
+        <legend>Jajan channels</legend>
+        <p className="muted small">Jajan is worked out from the target month's Salary income, as on the Sheet.</p>
         <label>Wiva's jajan channel<input value={channels.wiva}
           onChange={(e) => setChannels((c) => ({ ...c, wiva: e.target.value }))} /></label>
         <label>Jane's jajan channel<input value={channels.jane}

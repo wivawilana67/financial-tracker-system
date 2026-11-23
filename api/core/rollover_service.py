@@ -64,6 +64,26 @@ def _to_model(row: ro.Row) -> LedgerEntry:
                        payments_remaining=row.remaining, paid=row.paid)
 
 
+JAJAN_INCOME_CATEGORY = 'salary'  # DEFAULT_JAJAN_INCOME_CATEGORY in MonthlyGeneration.js
+
+
+def stored_income_for(req: GenerateRequest) -> list:
+    return list(IncomeEntry.objects.filter(month=req.target).order_by('id'))
+
+
+def _jajan_base(stored: list, boxes: dict) -> dict:
+    """Each person's income in the jajan category. The boxes sent with the request win over stored rows."""
+    amounts = {}
+    for m in stored:
+        amounts[(m.person, m.category)] = m.amount
+    amounts.update(boxes)
+    base = {'Wiva': Decimal(0), 'Jane': Decimal(0)}
+    for (person, category), amount in amounts.items():
+        if person in base and (category or '').strip().lower() == JAJAN_INCOME_CATEGORY:
+            base[person] += amount
+    return base
+
+
 def build_plan(req: GenerateRequest) -> Plan:
     if req.target.day != 1:
         raise ValueError('target must be the first day of the month')
@@ -94,8 +114,9 @@ def build_plan(req: GenerateRequest) -> Plan:
                                                         ro.resolve_amount(candidate, req.overrides)))
 
     if req.jajan_rates is not None:
+        base = req.jajan_base or _jajan_base(stored_income_for(req), req.income)
         wiva_net, jane_net = ro.jajan_net(
-            {'Wiva': req.jajan_base.get('Wiva', Decimal(0)), 'Jane': req.jajan_base.get('Jane', Decimal(0))},
+            {'Wiva': base.get('Wiva', Decimal(0)), 'Jane': base.get('Jane', Decimal(0))},
             req.jajan_rates, plan.autodeduct_totals)
         plan.jajan_net = {'Wiva': wiva_net, 'Jane': jane_net}
         planned[ro.EXPENSE].extend(ro.jajan_rows(req.target, wiva_net, jane_net,
@@ -146,3 +167,13 @@ def apply_plan(plan: Plan) -> dict:
             counts['inserted'] += len(plan.income.inserted)
     log.info('rollover applied target=%s updated=%s inserted=%s', plan.target, counts['updated'], counts['inserted'])
     return counts
+
+
+def all_candidate_uids(target: date) -> set:
+    """Every uid the rules offer for the target month. The nightly draft ticks all of them."""
+    rows = [_to_row(m) for m in LedgerEntry.objects.filter(month__lte=target)]
+    source = (target - timedelta(days=1)).replace(day=1)
+    uids = set()
+    for ledger in LEDGERS:
+        uids.update(c.uid for c in ro.collect_candidates(rows, ledger, source, target))
+    return uids

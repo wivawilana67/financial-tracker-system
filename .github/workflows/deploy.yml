@@ -47,6 +47,9 @@ jobs:
       REGION: ${{ vars.GCP_REGION }}
       GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
       SERVICE: financial-tracker-system-api
+      NIGHTLY_JOB: financial-tracker-system-nightly
+      SHARED_ENV: APP_ENV=${{ github.ref == 'refs/heads/master' && 'prod' || 'dev' }}@GOOGLE_CLIENT_ID=${{ vars.VITE_GOOGLE_CLIENT_ID }}@APP_VERSION=${{ github.sha }}@GCP_PROJECT_ID=${{ vars.GCP_PROJECT_ID }}@GMAIL_CLIENT_ID=${{ vars.GMAIL_CLIENT_ID }}@GMAIL_REDIRECT_URI=https://${{ vars.GCP_PROJECT_ID }}.web.app/api/gmail/callback@BACKUP_BUCKET=${{ vars.GCP_PROJECT_ID }}-backups
+      SHARED_SECRETS: DATABASE_URL=DATABASE_URL:latest,DJANGO_SECRET_KEY=DJANGO_SECRET_KEY:latest,ALLOWED_EMAILS=ALLOWED_EMAILS:latest,GMAIL_CLIENT_SECRET=GMAIL_CLIENT_SECRET:latest
       MIGRATE_JOB: financial-tracker-system-migrate
       RUNTIME_SA: api-runtime@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
       SHA: ${{ github.sha }}
@@ -99,9 +102,19 @@ jobs:
           gcloud run deploy "$SERVICE" --project="$PROJECT_ID" --region="$REGION" \
             --image="$IMAGE" --service-account="$RUNTIME_SA" \
             --allow-unauthenticated --min-instances=0 --max-instances=2 --memory=512Mi \
-            --set-env-vars="^@^APP_ENV=$APP_ENV@GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID@APP_VERSION=$SHA@DJANGO_CSRF_TRUSTED_ORIGINS=$ORIGINS" \
-            --set-secrets="DATABASE_URL=DATABASE_URL:latest,DJANGO_SECRET_KEY=DJANGO_SECRET_KEY:latest,ALLOWED_EMAILS=ALLOWED_EMAILS:latest" \
+            --set-env-vars="^@^$SHARED_ENV@DJANGO_CSRF_TRUSTED_ORIGINS=$ORIGINS" \
+            --set-secrets="$SHARED_SECRETS" \
             --quiet
+
+      - name: Deploy the nightly job (backup, card sync, drafts)
+        run: |
+          set -euo pipefail
+          gcloud run jobs deploy "$NIGHTLY_JOB" --project="$PROJECT_ID" --region="$REGION" \
+            --image="$IMAGE" --service-account="$RUNTIME_SA" \
+            --command=python --args=manage.py,nightly \
+            --set-env-vars="^@^$SHARED_ENV" \
+            --set-secrets="$SHARED_SECRETS" \
+            --max-retries=0 --task-timeout=900s --quiet
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:

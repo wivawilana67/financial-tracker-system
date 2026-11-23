@@ -126,7 +126,7 @@ export interface RolloverBody {
   selected: string[];
   overrides: Record<string, string>;
   income: { person: string; category: string; amount: string }[];
-  jajan_base: { Wiva: string; Jane: string };
+  jajan_base: Partial<{ Wiva: string; Jane: string }>;
   jajan_rates: { pool: number; wiva: number; jane: number };
   wiva_channel: string;
   jane_channel: string;
@@ -155,7 +155,58 @@ export interface CcRow {
   version: number;
 }
 
+export interface WalletRowView {
+  id: number;
+  version: number;
+  date: string | null;
+  list: string;
+  price: string;
+  account: string;
+  income: boolean;
+  paid: boolean;
+  cicil: boolean;
+  months: number | null;
+  ticks: boolean[];
+  instalment: string;
+  instalments_paid: string;
+}
+
+export interface WalletResponse {
+  rows: WalletRowView[];
+  total: string;
+  accounts: { name: string; balance: string }[];
+}
+
+async function patch<T>(path: string, body: unknown): Promise<T> {
+  return request<T>(path, { method: 'POST', body: JSON.stringify(body) });
+}
+
+export interface SyncStatus {
+  inbox: string;
+  connected: boolean;
+  runs: { when: string; inbox: string; bank: string; status: string; found: number; saved: number; failed: number; note: string }[];
+  failures: { when: string; inbox: string; reason: string }[];
+}
+
+export interface Draft {
+  id: number;
+  month: string;
+  created: string;
+  summary: Record<string, { updated: number; inserted: number }>;
+  confirmed: boolean;
+}
+
 export const api = {
+  syncStatus: () => request<SyncStatus>('gmail/status'),
+  gmailConnect: () => request<{ url: string }>('gmail/connect'),
+  ccSync: (start: string, end: string) => post<{ saved: number; runs: { inbox: string; bank: string; status: string; saved: number }[] }>(
+    'cc/sync', { start, end }),
+  drafts: () => request<{ drafts: Draft[] }>('drafts'),
+  confirmDraft: (id: number) => post<{ id: number; confirmed: boolean }>('drafts/confirm', { id }),
+  wallet: () => request<WalletResponse>('wallet'),
+  walletAdd: (body: unknown) => patch<WalletRowView>('wallet/add', body),
+  walletUpdate: (body: unknown) => patch<{ updated: boolean; row?: WalletRowView; error?: string }>('wallet/update', body),
+  walletDelete: (id: number, version: number) => patch<{ deleted: boolean }>('wallet/delete', { id, version }),
   cc: (filter: string) => request<{ filter: string; rows: CcRow[] }>(`cc?filter=${encodeURIComponent(filter)}`),
   ccUpdate: (rows: Partial<CcRow>[]) => post<{ updated: number; skipped: string[] }>('cc/update', { rows }),
   ccCleanup: () => post<{ hidden: number }>('cc/cleanup', {}),
@@ -170,6 +221,10 @@ export const api = {
   rolloverApply: (body: RolloverBody) => post<RolloverPlan>('rollover/apply', body),
   session: () => request<Session>('session'),
   healthDb: () => request<{ status: string; database: string }>('health/db'),
+  simulation: (month: string, what: Record<string, string> = {}) => {
+    const params = new URLSearchParams({ month, ...what });
+    return request<Record<string, unknown>>(`simulation?${params.toString()}`);
+  },
   dashboard: (month: string) => request<DashboardResponse>(`dashboard?month=${encodeURIComponent(month)}`),
 };
 

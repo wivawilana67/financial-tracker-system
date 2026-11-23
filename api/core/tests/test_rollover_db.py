@@ -91,3 +91,14 @@ def test_target_must_be_the_first_of_the_month(november):
     bad.target = date(2026, 12, 15)
     with pytest.raises(ValueError):
         build_plan(bad)
+
+
+def test_jajan_base_comes_from_the_target_month_salary(november):
+    # Salary 6,000,000 + 4,000,000 -> pool 10% = 1,000,000 -> 500,000 each (no autodeductions selected).
+    IncomeEntry.objects.create(month=TARGET, person='Wiva', category='Salary', amount=Decimal(6_000_000))
+    IncomeEntry.objects.create(month=TARGET, person='Jane', category='Salary', amount=Decimal(4_000_000))
+    req = request(set())
+    req.jajan_base = {}
+    req.income = {}
+    plan = build_plan(req)
+    assert plan.jajan_net == {'Wiva': Decimal(500_000), 'Jane': Decimal(500_000)}

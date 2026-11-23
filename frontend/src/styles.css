@@ -105,3 +105,22 @@ tr.gone td { opacity: .45; text-decoration: line-through; }
 .cc-checks label { display: inline-flex; gap: 4px; align-items: center; }
 .cc-checks select, .cc-note { font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
 .cc-note { width: 100%; }
+
+/* Paid status and simulation */
+.paid, .sim { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.chip.on { background: var(--accent-soft); border-color: var(--accent); }
+.row-pick { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+
+/* Wallet */
+.wallet { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+.ticks { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 4px; margin: 8px 0; }
+.tick { display: flex; flex-direction: column; align-items: center; font-size: .75rem; color: var(--muted); }
+.tick input:disabled { opacity: .35; }
+label.inline { display: inline-flex; gap: 4px; align-items: center; }
+
+/* Card sync */
+.sync { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+.warn-card { border-left: 4px solid var(--warn); }
+.add-row label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }

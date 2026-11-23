@@ -88,6 +88,7 @@ class WalletEntry(models.Model):
     months_total = models.PositiveIntegerField('bulan', null=True, blank=True)
     # The 24 tick boxes (columns 1..24): ticks[0] is installment 1, and so on.
     ticks = models.JSONField(default=list, blank=True)
+    version = models.PositiveIntegerField(default=1)
 
     class Meta:
         ordering = ['date', 'id']
@@ -126,3 +127,47 @@ class CcTransaction(models.Model):
 
     def __str__(self):
         return f'{self.occurred_at:%Y-%m-%d %H:%M} {self.bank} {self.description} {self.amount}'
+
+
+class SyncRun(models.Model):
+    """One card sync, per inbox and bank: what was found, saved and failed."""
+
+    started_at = models.DateTimeField(auto_now_add=True)
+    inbox = models.CharField(max_length=254)
+    bank = models.CharField(max_length=40)
+    range_start = models.DateField()
+    range_end = models.DateField()
+    found = models.PositiveIntegerField(default=0)
+    saved = models.PositiveIntegerField(default=0)
+    failed = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=20, default='ok')  # ok, skipped, error
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ['-started_at']
+
+
+class ParseFailure(models.Model):
+    """A card email the parser could not read. The email's text is not kept, only the date and reason."""
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    inbox = models.CharField(max_length=254)
+    bank = models.CharField(max_length=40)
+    received = models.DateTimeField()
+    reason = models.CharField(max_length=200)
+    resolved = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-received']
+
+
+class MonthlyDraft(models.Model):
+    """The nightly job's suggestion for the month: a summary only. Nothing is written to the ledgers."""
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    month = models.DateField()
+    summary = models.JSONField(default=dict)
+    confirmed = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']

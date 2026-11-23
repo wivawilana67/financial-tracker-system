@@ -7,6 +7,10 @@ import Dashboard from './Dashboard';
 import MonthlyData from './MonthlyData';
 import Rollover from './Rollover';
 import CcTracker from './CcTracker';
+import PaidStatus from './PaidStatus';
+import Simulation from './Simulation';
+import Wallet from './Wallet';
+import CardSync from './CardSync';
 
 type View =
   | { kind: 'starting' }
@@ -109,7 +113,11 @@ export default function App() {
             <Dashboard initialMonth={view.session.month} />
             <MonthlyData initialMonth={view.session.month} />
             <Rollover sessionMonth={view.session.month} />
+            <PaidStatus initialMonth={view.session.month} />
+            <Simulation initialMonth={view.session.month} />
             <CcTracker />
+            <Wallet />
+            <CardSync />
           </>
         )}
       </main>
