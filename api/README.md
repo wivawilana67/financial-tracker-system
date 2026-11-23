@@ -139,5 +139,13 @@ tested on their own:
   rounded half up to whole rupiah (the Sheet's `Math.round`). Exact decimals, so the rounding is
   the only one.
 
-Still to port: the rollover merge (upsert and the target-month checks), the paid status rules, the
-Monthly Data edit guard, the simulation and the Dashboard totals.
+* `core/rules/rollover.py`: candidates from last month (installments from any earlier month, plain
+  rows from the source month only), the upsert into the target month (identity = List + Type +
+  Channel; Income = person + category), the autodeduct totals (an existing row with the same
+  identity is not counted twice), and the two recalculated jajan rows.
+* `core/rollover_service.py`: loads the stored rows, runs those rules, and writes only when
+  `apply_plan()` is called, in one transaction. Updated rows get `version + 1`; untouched rows are not
+  written. A dry run is `build_plan()` alone.
+
+Not ported yet: the target-month edits made before the rollover (the Monthly Data tab), the paid-status
+rules, the simulation and the Dashboard totals.
